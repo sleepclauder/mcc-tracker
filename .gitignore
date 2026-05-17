@@ -1,0 +1,17 @@
+# Oracle Wallet
+*.zip
+wallet/
+
+# Секреты
+.env
+*.key
+
+# Python
+__pycache__/
+*.pyc
+venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
