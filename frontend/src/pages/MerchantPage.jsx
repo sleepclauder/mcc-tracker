@@ -40,6 +40,7 @@ export default function MerchantPage() {
       </Link>
       <h2>{stats.NAME || 'Магазин'}</h2>
       <p className="address">{stats.ADDRESS}</p>
+      <p className="merchant-hint">MCC — код категории торговой точки. Чем точнее код, тем выше кэшбэк по вашей карте.</p>
 
       <div className="stats-grid">
         <div className="stat">
