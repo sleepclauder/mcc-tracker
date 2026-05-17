@@ -4,7 +4,7 @@ import MerchantList from '../components/MerchantList';
 import { useMerchants } from '../hooks/useMerchants';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
-import { MCC_LABELS } from '../utils/mcc';
+import { MCC_LABELS, MCC_ICONS } from '../utils/mcc';
 import { MapPin, List } from '../components/Icons';
 
 const CITIES = [
@@ -27,6 +27,7 @@ export default function MapPage() {
   const [geoStatus, setGeoStatus] = useState('idle'); // idle | loading | denied
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [query, setQuery] = useState('');
+  const [selectedMcc, setSelectedMcc] = useState(null);
   const { merchants, loading, error } = useMerchants(center.lat, center.lon, 1000);
   const { authenticated, logout } = useAuth();
   const navigate = useNavigate();
@@ -59,9 +60,13 @@ export default function MapPage() {
     if (city) moveTo(city.lat, city.lon);
   }
 
-  const filteredMerchants = query.trim()
-    ? merchants.filter(m => m.NAME?.toLowerCase().includes(query.toLowerCase()))
-    : merchants;
+  const availableMccs = [...new Set(merchants.map(m => m.LAST_MCC).filter(Boolean))];
+
+  const filteredMerchants = merchants.filter(m => {
+    if (selectedMcc && m.LAST_MCC !== selectedMcc) return false;
+    if (query.trim() && !m.NAME?.toLowerCase().includes(query.toLowerCase())) return false;
+    return true;
+  });
 
   const hm = hoveredState?.merchant;
 
@@ -132,6 +137,19 @@ export default function MapPage() {
             value={query}
             onChange={e => setQuery(e.target.value)}
           />
+          {availableMccs.length > 0 && (
+            <div className="mcc-filter-chips">
+              {availableMccs.map(mcc => (
+                <button
+                  key={mcc}
+                  className={`mcc-chip${selectedMcc === mcc ? ' mcc-chip--active' : ''}`}
+                  onClick={() => setSelectedMcc(selectedMcc === mcc ? null : mcc)}
+                >
+                  {MCC_ICONS[mcc] ?? '🏷'} {MCC_LABELS[mcc] ?? mcc}
+                </button>
+              ))}
+            </div>
+          )}
           <MerchantList merchants={filteredMerchants} loading={loading} error={error} />
         </aside>
       </div>
