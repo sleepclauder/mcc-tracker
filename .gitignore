@@ -1,3 +1,6 @@
+# Секретные данные
+secrets/
+
 # Oracle Wallet
 *.zip
 wallet/
