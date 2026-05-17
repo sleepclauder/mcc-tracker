@@ -128,7 +128,15 @@ export default function MapPage() {
   return (
     <div className="map-page">
       <header className="app-header">
-        <span className="logo">ЧекБэк</span>
+        <span className="logo">
+          <svg width="28" height="34" viewBox="0 0 40 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M20 2C10.6 2 3 9.6 3 19C3 28.4 20 46 20 46C20 46 37 28.4 37 19C37 9.6 29.4 2 20 2Z" fill="#e53935"/>
+            <circle cx="15" cy="13.5" r="3" fill="white"/>
+            <circle cx="25" cy="23.5" r="3" fill="white"/>
+            <line x1="25.5" y1="12.5" x2="14.5" y2="24.5" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+          </svg>
+          Чек<span style={{color:'#e53935'}}>Бэк</span>
+        </span>
         <div className="header-controls">
           <button
             className="btn-icon btn-geo"

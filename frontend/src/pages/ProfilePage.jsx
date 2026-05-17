@@ -182,7 +182,15 @@ export default function ProfilePage() {
     <div className="profile-page">
       <header className="app-header">
         <button className="btn-back" onClick={() => navigate('/')}>← Карта</button>
-        <span className="logo">Личный кабинет</span>
+        <span className="logo">
+          <svg width="22" height="27" viewBox="0 0 40 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M20 2C10.6 2 3 9.6 3 19C3 28.4 20 46 20 46C20 46 37 28.4 37 19C37 9.6 29.4 2 20 2Z" fill="#e53935"/>
+            <circle cx="15" cy="13.5" r="3" fill="white"/>
+            <circle cx="25" cy="23.5" r="3" fill="white"/>
+            <line x1="25.5" y1="12.5" x2="14.5" y2="24.5" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+          </svg>
+          Личный кабинет
+        </span>
         <div className="header-controls">
           <span className="profile-email">{userEmail}</span>
           <button className="btn-link" onClick={() => { logout(); navigate('/login'); }}>Выйти</button>

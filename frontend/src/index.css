@@ -5,7 +5,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 /* Layout */
 .map-page { display: flex; flex-direction: column; height: 100vh; }
 .app-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; background: #fff; border-bottom: 1px solid #e0e0e0; }
-.logo { font-size: 18px; font-weight: 700; color: #e53935; }
+.logo { font-size: 18px; font-weight: 700; color: #1a1a1a; display: flex; align-items: center; gap: 6px; line-height: 1; }
 .header-controls { display: flex; align-items: center; gap: 10px; }
 .filter-bar { display: flex; align-items: center; gap: 6px; padding: 8px 16px; background: #fff; border-bottom: 1px solid #e0e0e0; overflow-x: auto; flex-shrink: 0; }
 .filter-bar::-webkit-scrollbar { display: none; }
