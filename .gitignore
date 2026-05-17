@@ -1,5 +1,6 @@
 # Секретные данные
 secrets/
+ssh-key/
 
 # Зависимости
 node_modules/

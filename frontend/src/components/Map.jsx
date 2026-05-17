@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { load } from '@2gis/mapgl';
 import { useNavigate } from 'react-router-dom';
+import { markerIcon } from '../utils/mcc';
 
 export default function Map({ onCenterChange, merchants = [], onMerchantHover, flyTo }) {
   const containerRef = useRef(null);
@@ -19,6 +20,9 @@ export default function Map({ onCenterChange, merchants = [], onMerchantHover, f
     merchantList.forEach(merchant => {
       const marker = new mapgl.Marker(map, {
         coordinates: [merchant.LON, merchant.LAT],
+        icon: markerIcon(merchant.LAST_MCC),
+        iconWidth: 32,
+        iconHeight: 32,
       });
       marker.on('click', () => navigate(`/merchant/${merchant.YANDEX_FIRM_ID}`));
       marker.on('mouseover', () => {
