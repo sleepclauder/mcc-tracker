@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import Map from '../components/Map';
 import MerchantList from '../components/MerchantList';
 import { useMerchants } from '../hooks/useMerchants';
@@ -6,6 +6,45 @@ import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { MCC_LABELS, MCC_ICONS } from '../utils/mcc';
 import { MapPin, List } from '../components/Icons';
+import client from '../api/client';
+
+function currentMonth() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function UserMenu({ email, onLogout, onProfile }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    function handleClick(e) {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  return (
+    <div className="user-menu" ref={ref}>
+      <button className="user-menu-trigger" onClick={() => setOpen(o => !o)}>
+        <span className="user-menu-avatar">{email[0].toUpperCase()}</span>
+        <span className="user-menu-email">{email}</span>
+        <span className="user-menu-caret">{open ? '▴' : '▾'}</span>
+      </button>
+      {open && (
+        <div className="user-menu-dropdown">
+          <button className="user-menu-item" onClick={() => { setOpen(false); onProfile(); }}>
+            Настройки профиля
+          </button>
+          <button className="user-menu-item user-menu-item--danger" onClick={() => { setOpen(false); onLogout(); }}>
+            Выйти
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 const CITIES = [
   { name: 'Санкт-Петербург', lat: 59.9311, lon: 30.3161 },
@@ -40,8 +79,16 @@ export default function MapPage() {
   const [selectedMccs, setSelectedMccs] = useState(new Set());
 
   const { merchants, loading, error } = useMerchants(center.lat, center.lon, 1000);
-  const { authenticated, logout } = useAuth();
+  const { authenticated, userEmail, logout } = useAuth();
   const navigate = useNavigate();
+  const [bestCashback, setBestCashback] = useState({});
+
+  useEffect(() => {
+    if (!authenticated) { setBestCashback({}); return; }
+    client.get(`/cards/best?month=${currentMonth()}`)
+      .then(r => setBestCashback(r.data))
+      .catch(() => {});
+  }, [authenticated]);
 
   function moveTo(lat, lon) {
     setCenter({ lat, lon });
@@ -103,8 +150,8 @@ export default function MapPage() {
             <option value="" disabled>Выбрать город</option>
             {CITIES.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
           </select>
-          {authenticated
-            ? <button className="btn-link" onClick={logout}>Выйти</button>
+          {authenticated && userEmail
+            ? <UserMenu email={userEmail} onLogout={logout} onProfile={() => navigate('/profile')} />
             : <button className="btn-link" onClick={() => navigate('/login')}>Войти</button>
           }
           <button
@@ -174,6 +221,11 @@ export default function MapPage() {
               )}
               {hm.VOTES_TOTAL > 0 && (
                 <span>{hm.VOTES_TOTAL} голос(ов)</span>
+              )}
+              {hm.LAST_MCC && bestCashback[hm.LAST_MCC] && (
+                <span className="map-tooltip-cashback">
+                  💳 {bestCashback[hm.LAST_MCC].bank} {bestCashback[hm.LAST_MCC].pct}%
+                </span>
               )}
             </div>
           )}

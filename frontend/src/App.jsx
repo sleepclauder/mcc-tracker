@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import MapPage from './pages/MapPage';
 import MerchantPage from './pages/MerchantPage';
 import LoginPage from './pages/LoginPage';
+import ProfilePage from './pages/ProfilePage';
 import AuthGuard from './components/AuthGuard';
 
 export default function App() {
@@ -11,6 +12,7 @@ export default function App() {
         <Route path="/" element={<MapPage />} />
         <Route path="/merchant/:yandex_firm_id" element={<MerchantPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
       </Routes>
     </BrowserRouter>
   );
