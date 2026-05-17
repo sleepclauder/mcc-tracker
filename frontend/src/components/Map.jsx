@@ -1,34 +1,33 @@
 import { useEffect, useRef } from 'react';
+import { load } from '@2gis/mapgl';
 
 export default function Map({ onCenterChange }) {
   const containerRef = useRef(null);
   const mapRef = useRef(null);
 
   useEffect(() => {
-    if (!window.ymaps3 || mapRef.current) return;
+    let map;
 
-    async function init() {
-      await window.ymaps3.ready;
-      const { YMap, YMapDefaultSchemeLayer, YMapDefaultFeaturesLayer } = window.ymaps3;
+    load().then((mapgl) => {
+      if (!containerRef.current || mapRef.current) return;
 
-      const map = new YMap(containerRef.current, {
-        location: { center: [37.617, 55.755], zoom: 15 },
+      map = new mapgl.Map(containerRef.current, {
+        center: [37.617, 55.755],
+        zoom: 15,
+        key: import.meta.env.VITE_2GIS_KEY,
       });
-      map.addChild(new YMapDefaultSchemeLayer());
-      map.addChild(new YMapDefaultFeaturesLayer());
       mapRef.current = map;
 
-      map.addChild({
-        onUpdate({ location }) {
-          if (location?.center) {
-            const [lon, lat] = location.center;
-            onCenterChange?.(lat, lon);
-          }
-        },
+      map.on('moveend', () => {
+        const [lon, lat] = map.getCenter();
+        onCenterChange?.(lat, lon);
       });
-    }
+    });
 
-    init();
+    return () => {
+      mapRef.current?.destroy();
+      mapRef.current = null;
+    };
   }, [onCenterChange]);
 
   return <div ref={containerRef} style={{ width: '100%', height: '100%' }} />;
