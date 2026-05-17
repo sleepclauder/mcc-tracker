@@ -103,6 +103,12 @@ export default function MapPage() {
       </header>
       <div className="map-layout">
         <div className="map-container">
+          {loading && center.lat !== null && (
+            <div className="map-loading">
+              <span className="map-loading-spinner" />
+              Загрузка...
+            </div>
+          )}
           {center.lat === null && geoStatus !== 'loading' && (
             <div className="map-empty-overlay">
               <MapPin size={36} style={{ color: '#e53935' }} />
