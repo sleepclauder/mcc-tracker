@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import client from '../api/client';
 import { MCC_LABELS, MCC_ICONS } from '../utils/mcc';
+import { CITIES, CITY_KEY, CITY_NAME_KEY } from '../utils/cities';
 import { useAuth } from '../hooks/useAuth';
 
 const BANK_META = {
@@ -90,6 +91,9 @@ export default function ProfilePage() {
   const { userEmail, logout } = useAuth();
 
   const [month, setMonth] = useState(currentMonth);
+  const [preferredCity, setPreferredCity] = useState(
+    () => localStorage.getItem(CITY_NAME_KEY) || ''
+  );
   const [cards, setCards] = useState([]);
   const [rules, setRules] = useState({});        // cardId → [{mcc_code, cashback_pct}]
   const [dirty, setDirty] = useState({});        // cardId → bool
@@ -190,6 +194,25 @@ export default function ProfilePage() {
           <button className="btn-icon" onClick={() => setMonth(m => adjacentMonth(m, -1))}>‹</button>
           <span className="profile-month-label">{monthLabel(month)}</span>
           <button className="btn-icon" onClick={() => setMonth(m => adjacentMonth(m, 1))}>›</button>
+        </div>
+
+        <h2 className="profile-section-title">Мой город</h2>
+        <div className="profile-city-grid">
+          {CITIES.map(city => (
+            <button
+              key={city.name}
+              className={`profile-city-item${preferredCity === city.name ? ' profile-city-item--active' : ''}`}
+              onClick={() => {
+                setPreferredCity(city.name);
+                try {
+                  localStorage.setItem(CITY_NAME_KEY, city.name);
+                  localStorage.setItem(CITY_KEY, JSON.stringify({ lat: city.lat, lon: city.lon }));
+                } catch {}
+              }}
+            >
+              {city.name}
+            </button>
+          ))}
         </div>
 
         <h2 className="profile-section-title">Мои карты</h2>

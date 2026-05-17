@@ -5,6 +5,7 @@ import { useMerchants } from '../hooks/useMerchants';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { MCC_LABELS, MCC_ICONS } from '../utils/mcc';
+import { CITIES, CITY_KEY, CITY_NAME_KEY } from '../utils/cities';
 import { MapPin, List } from '../components/Icons';
 import client from '../api/client';
 
@@ -46,18 +47,6 @@ function UserMenu({ email, onLogout, onProfile }) {
   );
 }
 
-const CITIES = [
-  { name: 'Санкт-Петербург', lat: 59.9311, lon: 30.3161 },
-  { name: 'Москва',           lat: 55.7558, lon: 37.6173 },
-  { name: 'Новосибирск',      lat: 54.9885, lon: 82.9207 },
-  { name: 'Екатеринбург',     lat: 56.8389, lon: 60.6057 },
-  { name: 'Казань',           lat: 55.7887, lon: 49.1221 },
-  { name: 'Нижний Новгород',  lat: 56.2965, lon: 43.9361 },
-  { name: 'Краснодар',        lat: 45.0328, lon: 38.9769 },
-  { name: 'Самара',           lat: 53.2001, lon: 50.1500 },
-  { name: 'Омск',             lat: 54.9885, lon: 73.3242 },
-  { name: 'Ростов-на-Дону',   lat: 47.2357, lon: 39.7015 },
-];
 
 const MCC_CATEGORIES = Object.entries(MCC_LABELS).map(([mcc, label]) => ({
   mcc, label, icon: MCC_ICONS[mcc] ?? '🏷',
@@ -66,7 +55,7 @@ const MCC_CATEGORIES = Object.entries(MCC_LABELS).map(([mcc, label]) => ({
 export default function MapPage() {
   const [center, setCenter] = useState(() => {
     try {
-      const saved = localStorage.getItem('mcc_last_center');
+      const saved = localStorage.getItem(CITY_KEY);
       if (saved) return JSON.parse(saved);
     } catch {}
     return { lat: null, lon: null };
@@ -93,7 +82,7 @@ export default function MapPage() {
   function moveTo(lat, lon) {
     setCenter({ lat, lon });
     setFlyTo({ lat, lon });
-    try { localStorage.setItem('mcc_last_center', JSON.stringify({ lat, lon })); } catch {}
+    try { localStorage.setItem(CITY_KEY, JSON.stringify({ lat, lon })); } catch {}
   }
 
   function requestGeolocation() {
@@ -109,12 +98,15 @@ export default function MapPage() {
 
   const handleCenterChange = useCallback((lat, lon) => {
     setCenter({ lat, lon });
-    try { localStorage.setItem('mcc_last_center', JSON.stringify({ lat, lon })); } catch {}
+    try { localStorage.setItem(CITY_KEY, JSON.stringify({ lat, lon })); } catch {}
   }, []);
 
   function handleCitySelect(e) {
     const city = CITIES.find(c => c.name === e.target.value);
-    if (city) moveTo(city.lat, city.lon);
+    if (city) {
+      moveTo(city.lat, city.lon);
+      try { localStorage.setItem(CITY_NAME_KEY, city.name); } catch {}
+    }
   }
 
   function toggleMcc(mcc) {
