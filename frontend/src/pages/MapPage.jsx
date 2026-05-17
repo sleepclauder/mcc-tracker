@@ -26,6 +26,7 @@ export default function MapPage() {
   const [hoveredState, setHoveredState] = useState(null); // { merchant, x, y }
   const [geoStatus, setGeoStatus] = useState('idle'); // idle | loading | denied
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [query, setQuery] = useState('');
   const { merchants, loading, error } = useMerchants(center.lat, center.lon, 1000);
   const { authenticated, logout } = useAuth();
   const navigate = useNavigate();
@@ -57,6 +58,10 @@ export default function MapPage() {
     const city = CITIES.find(c => c.name === e.target.value);
     if (city) moveTo(city.lat, city.lon);
   }
+
+  const filteredMerchants = query.trim()
+    ? merchants.filter(m => m.NAME?.toLowerCase().includes(query.toLowerCase()))
+    : merchants;
 
   const hm = hoveredState?.merchant;
 
@@ -120,7 +125,14 @@ export default function MapPage() {
         </div>
         <aside className={`sidebar${sidebarOpen ? ' sidebar--open' : ''}`}>
           <h3>Магазины рядом</h3>
-          <MerchantList merchants={merchants} loading={loading} error={error} />
+          <input
+            className="sidebar-search"
+            type="search"
+            placeholder="Поиск по названию..."
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+          />
+          <MerchantList merchants={filteredMerchants} loading={loading} error={error} />
         </aside>
       </div>
     </div>
