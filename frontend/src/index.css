@@ -84,6 +84,12 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .btn-link { background: none; border: none; color: #e53935; cursor: pointer; font-size: 14px; padding: 4px; }
 .btn-link:hover { text-decoration: underline; }
 
+/* Map empty state */
+.map-empty-overlay { position: absolute; inset: 0; z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; background: rgba(255,255,255,0.88); backdrop-filter: blur(4px); text-align: center; padding: 24px; }
+.map-empty-overlay p { font-size: 16px; font-weight: 600; color: #1a1a1a; }
+.map-empty-hint { font-size: 13px !important; font-weight: 400 !important; color: #888 !important; }
+.map-empty-overlay .btn-primary { margin-top: 4px; }
+
 /* Map tooltip — positioned near marker via inline style */
 .map-tooltip { position: absolute; z-index: 10; background: #fff; border-radius: 8px; padding: 10px 14px; box-shadow: 0 4px 16px rgba(0,0,0,0.18); display: flex; flex-direction: column; gap: 4px; max-width: 240px; pointer-events: none; transform: translateY(-50%); }
 .map-tooltip strong { font-size: 14px; }

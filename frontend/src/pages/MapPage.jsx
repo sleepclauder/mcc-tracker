@@ -103,6 +103,16 @@ export default function MapPage() {
       </header>
       <div className="map-layout">
         <div className="map-container">
+          {center.lat === null && geoStatus !== 'loading' && (
+            <div className="map-empty-overlay">
+              <MapPin size={36} style={{ color: '#e53935' }} />
+              <p>Разрешите доступ к геолокации</p>
+              <p className="map-empty-hint">или выберите город в меню выше</p>
+              <button className="btn-primary" onClick={requestGeolocation}>
+                Определить местоположение
+              </button>
+            </div>
+          )}
           <Map
             onCenterChange={handleCenterChange}
             merchants={merchants}
