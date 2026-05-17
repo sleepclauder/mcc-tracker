@@ -20,6 +20,10 @@ const CITIES = [
   { name: 'Ростов-на-Дону',   lat: 47.2357, lon: 39.7015 },
 ];
 
+const MCC_CATEGORIES = Object.entries(MCC_LABELS).map(([mcc, label]) => ({
+  mcc, label, icon: MCC_ICONS[mcc] ?? '🏷',
+}));
+
 export default function MapPage() {
   const [center, setCenter] = useState(() => {
     try {
@@ -29,11 +33,12 @@ export default function MapPage() {
     return { lat: null, lon: null };
   });
   const [flyTo, setFlyTo] = useState(null);
-  const [hoveredState, setHoveredState] = useState(null); // { merchant, x, y }
-  const [geoStatus, setGeoStatus] = useState('idle'); // idle | loading | denied
+  const [hoveredState, setHoveredState] = useState(null);
+  const [geoStatus, setGeoStatus] = useState('idle');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [query, setQuery] = useState('');
-  const [selectedMcc, setSelectedMcc] = useState(null);
+  const [selectedMccs, setSelectedMccs] = useState(new Set());
+
   const { merchants, loading, error } = useMerchants(center.lat, center.lon, 1000);
   const { authenticated, logout } = useAuth();
   const navigate = useNavigate();
@@ -48,10 +53,7 @@ export default function MapPage() {
     if (!navigator.geolocation) { setGeoStatus('denied'); return; }
     setGeoStatus('loading');
     navigator.geolocation.getCurrentPosition(
-      ({ coords }) => {
-        setGeoStatus('idle');
-        moveTo(coords.latitude, coords.longitude);
-      },
+      ({ coords }) => { setGeoStatus('idle'); moveTo(coords.latitude, coords.longitude); },
       () => setGeoStatus('denied')
     );
   }
@@ -68,10 +70,16 @@ export default function MapPage() {
     if (city) moveTo(city.lat, city.lon);
   }
 
-  const availableMccs = [...new Set(merchants.map(m => m.LAST_MCC).filter(Boolean))];
+  function toggleMcc(mcc) {
+    setSelectedMccs(prev => {
+      const next = new Set(prev);
+      next.has(mcc) ? next.delete(mcc) : next.add(mcc);
+      return next;
+    });
+  }
 
   const filteredMerchants = merchants.filter(m => {
-    if (selectedMcc && m.LAST_MCC !== selectedMcc) return false;
+    if (selectedMccs.size > 0 && !selectedMccs.has(m.LAST_MCC)) return false;
     if (query.trim() && !m.NAME?.toLowerCase().includes(query.toLowerCase())) return false;
     return true;
   });
@@ -109,6 +117,24 @@ export default function MapPage() {
           </button>
         </div>
       </header>
+
+      <div className="filter-bar">
+        {MCC_CATEGORIES.map(({ mcc, label, icon }) => (
+          <button
+            key={mcc}
+            className={`mcc-chip${selectedMccs.has(mcc) ? ' mcc-chip--active' : ''}`}
+            onClick={() => toggleMcc(mcc)}
+          >
+            {icon} {label}
+          </button>
+        ))}
+        {selectedMccs.size > 0 && (
+          <button className="mcc-chip-clear" onClick={() => setSelectedMccs(new Set())}>
+            Сбросить
+          </button>
+        )}
+      </div>
+
       <div className="map-layout">
         <div className="map-container">
           {loading && center.lat !== null && (
@@ -129,7 +155,7 @@ export default function MapPage() {
           )}
           <Map
             onCenterChange={handleCenterChange}
-            merchants={merchants}
+            merchants={filteredMerchants}
             onMerchantHover={setHoveredState}
             flyTo={flyTo}
           />
@@ -161,19 +187,6 @@ export default function MapPage() {
             value={query}
             onChange={e => setQuery(e.target.value)}
           />
-          {availableMccs.length > 0 && (
-            <div className="mcc-filter-chips">
-              {availableMccs.map(mcc => (
-                <button
-                  key={mcc}
-                  className={`mcc-chip${selectedMcc === mcc ? ' mcc-chip--active' : ''}`}
-                  onClick={() => setSelectedMcc(selectedMcc === mcc ? null : mcc)}
-                >
-                  {MCC_ICONS[mcc] ?? '🏷'} {MCC_LABELS[mcc] ?? mcc}
-                </button>
-              ))}
-            </div>
-          )}
           <MerchantList merchants={filteredMerchants} loading={loading} error={error} />
         </aside>
       </div>
