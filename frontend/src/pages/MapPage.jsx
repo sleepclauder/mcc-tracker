@@ -139,7 +139,7 @@ export default function MapPage() {
           )}
         </div>
         <aside className={`sidebar${sidebarOpen ? ' sidebar--open' : ''}`}>
-          <h3>Магазины рядом</h3>
+          <h3>Магазины рядом {!loading && <span className="sidebar-count">({filteredMerchants.length})</span>}</h3>
           <input
             className="sidebar-search"
             type="search"
