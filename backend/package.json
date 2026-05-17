@@ -1,0 +1,26 @@
+{
+  "name": "mcc-tracker-backend",
+  "version": "1.0.0",
+  "description": "MCC Tracker API",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "node --watch src/app.js",
+    "test": "node --test src/**/*.test.js",
+    "test:coverage": "node --test --experimental-test-coverage src/**/*.test.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "oracledb": "^6.5.1"
+  },
+  "devDependencies": {
+    "supertest": "^7.0.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
