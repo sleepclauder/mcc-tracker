@@ -25,9 +25,11 @@ export default function Map({ onCenterChange, merchants = [], onMerchantHover, f
         iconHeight: 32,
       });
       marker.on('click', () => navigate(`/merchant/${merchant.YANDEX_FIRM_ID}`));
-      marker.on('mouseover', () => {
-        const pos = map.project([merchant.LON, merchant.LAT]);
-        onMerchantHoverRef.current?.({ merchant, x: pos.x, y: pos.y });
+      marker.on('mouseover', (e) => {
+        const rect = containerRef.current.getBoundingClientRect();
+        const x = (e.originalEvent?.clientX ?? 0) - rect.left;
+        const y = (e.originalEvent?.clientY ?? 0) - rect.top;
+        onMerchantHoverRef.current?.({ merchant, x, y });
       });
       marker.on('mouseout', () => onMerchantHoverRef.current?.(null));
       markersRef.current.push(marker);
