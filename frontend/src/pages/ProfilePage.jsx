@@ -4,10 +4,66 @@ import client from '../api/client';
 import { MCC_LABELS, MCC_ICONS } from '../utils/mcc';
 import { useAuth } from '../hooks/useAuth';
 
-const BANKS = [
-  'Т-Банк', 'Сбер', 'Альфа-Банк', 'ВТБ', 'Озон Банк',
-  'Яндекс Банк', 'Газпромбанк', 'ПСБ', 'МТС Банк', 'Россельхозбанк', 'Росбанк',
-];
+const BANK_META = {
+  'Т-Банк':           { domain: 'tbank.ru',         color: '#FFDD2D', text: '#000' },
+  'Сбер':             { domain: 'sber.ru',           color: '#21A038', text: '#fff' },
+  'Альфа-Банк':       { domain: 'alfabank.ru',       color: '#EF3124', text: '#fff' },
+  'ВТБ':              { domain: 'vtb.ru',            color: '#009FDF', text: '#fff' },
+  'Озон Банк':        { domain: 'ozon.ru',           color: '#005BFF', text: '#fff' },
+  'Яндекс Банк':      { domain: 'bank.yandex.ru',   color: '#FC3F1D', text: '#fff' },
+  'Газпромбанк':      { domain: 'gazprombank.ru',    color: '#003087', text: '#fff' },
+  'ПСБ':              { domain: 'psbank.ru',         color: '#1A2B6B', text: '#fff' },
+  'МТС Банк':         { domain: 'mtsbank.ru',        color: '#E30611', text: '#fff' },
+  'Россельхозбанк':   { domain: 'rshb.ru',           color: '#00843D', text: '#fff' },
+  'Росбанк':          { domain: 'rosbank.ru',        color: '#DD0A34', text: '#fff' },
+};
+
+const BANKS = Object.keys(BANK_META);
+
+function BankIcon({ name, size = 24 }) {
+  const meta = BANK_META[name];
+  if (!meta) return null;
+  const src = `https://www.google.com/s2/favicons?domain=${meta.domain}&sz=64`;
+  return (
+    <img
+      src={src}
+      width={size}
+      height={size}
+      alt={name}
+      className="bank-icon"
+      onError={e => {
+        e.target.style.display = 'none';
+        e.target.nextSibling.style.display = 'flex';
+      }}
+      style={{ borderRadius: 6, display: 'block' }}
+    />
+  );
+}
+
+function BankIconFallback({ name, size = 24 }) {
+  const meta = BANK_META[name] ?? { color: '#999', text: '#fff' };
+  return (
+    <span
+      className="bank-icon-fallback"
+      style={{
+        width: size, height: size, background: meta.color, color: meta.text,
+        fontSize: size * 0.45, display: 'none', borderRadius: 6,
+        alignItems: 'center', justifyContent: 'center', fontWeight: 700, flexShrink: 0,
+      }}
+    >
+      {name[0]}
+    </span>
+  );
+}
+
+function BankBadge({ name, size = 24 }) {
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', flexShrink: 0 }}>
+      <BankIcon name={name} size={size} />
+      <BankIconFallback name={name} size={size} />
+    </span>
+  );
+}
 
 const MCC_OPTIONS = Object.entries(MCC_LABELS).map(([code, label]) => ({ code, label }));
 
@@ -142,6 +198,7 @@ export default function ProfilePage() {
           <div key={card.id} className="profile-card">
             <div className="profile-card-header">
               <div className="profile-card-title">
+                <BankBadge name={card.bank_name} size={28} />
                 <span className="profile-card-bank">{card.bank_name}</span>
                 {card.card_name && <span className="profile-card-name">{card.card_name}</span>}
               </div>
@@ -229,13 +286,19 @@ export default function ProfilePage() {
         {addOpen && (
           <div className="profile-card profile-add-card">
             <p className="profile-add-title">Новая карта</p>
-            <select
-              className="profile-bank-select"
-              value={newBank}
-              onChange={e => setNewBank(e.target.value)}
-            >
-              {BANKS.map(b => <option key={b} value={b}>{b}</option>)}
-            </select>
+            <div className="bank-picker">
+              {BANKS.map(b => (
+                <button
+                  key={b}
+                  className={`bank-picker-item${newBank === b ? ' bank-picker-item--active' : ''}`}
+                  onClick={() => setNewBank(b)}
+                  type="button"
+                >
+                  <BankBadge name={b} size={32} />
+                  <span>{b}</span>
+                </button>
+              ))}
+            </div>
             <input
               className="profile-cardname-input"
               type="text"

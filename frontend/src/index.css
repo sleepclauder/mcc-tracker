@@ -177,6 +177,15 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .profile-cardname-input { font-size: 14px; border: 1px solid #e0e0e0; border-radius: 6px; padding: 8px 10px; }
 .profile-add-actions { display: flex; align-items: center; gap: 12px; }
 
+/* Bank icon */
+.bank-icon { object-fit: contain; border-radius: 6px; flex-shrink: 0; }
+
+/* Bank picker grid */
+.bank-picker { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; }
+.bank-picker-item { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 8px; border: 1px solid #e0e0e0; border-radius: 10px; background: #fafafa; cursor: pointer; font-size: 12px; color: #444; text-align: center; transition: border-color 0.15s, background 0.15s; }
+.bank-picker-item:hover { border-color: #bbb; background: #f0f0f0; }
+.bank-picker-item--active { border-color: #1e88e5; background: #e3f2fd; color: #1565c0; font-weight: 600; }
+
 /* Mobile */
 @media (max-width: 768px) {
   .btn-sidebar-toggle { display: flex; }
