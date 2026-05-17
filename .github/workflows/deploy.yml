@@ -17,13 +17,6 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.VM_SSH_KEY }}" | tr -d '\r' > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          echo "--- key first line ---"
-          head -1 ~/.ssh/deploy_key
-          echo "--- key last line ---"
-          tail -1 ~/.ssh/deploy_key
-          echo "--- key line count ---"
-          wc -l ~/.ssh/deploy_key
-          ssh-keygen -l -f ~/.ssh/deploy_key || echo "ssh-keygen check failed"
           ssh-keyscan -H ${{ secrets.VM_HOST }} >> ~/.ssh/known_hosts
 
       - name: Setup Node.js
@@ -48,7 +41,8 @@ jobs:
           ssh -i ~/.ssh/deploy_key ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} << 'ENDSSH'
             set -e
             cd /var/www/mcc-tracker/app
-            git pull origin main
+            git fetch origin main
+            git reset --hard origin/main
             cd backend
             npm install --production
             pm2 reload mcc-api || pm2 start src/app.js --name mcc-api
