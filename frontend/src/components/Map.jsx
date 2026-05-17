@@ -21,7 +21,10 @@ export default function Map({ onCenterChange, merchants = [], onMerchantHover, f
         coordinates: [merchant.LON, merchant.LAT],
       });
       marker.on('click', () => navigate(`/merchant/${merchant.YANDEX_FIRM_ID}`));
-      marker.on('mouseover', () => onMerchantHoverRef.current?.(merchant));
+      marker.on('mouseover', () => {
+        const pos = map.project([merchant.LON, merchant.LAT]);
+        onMerchantHoverRef.current?.({ merchant, x: pos.x, y: pos.y });
+      });
       marker.on('mouseout', () => onMerchantHoverRef.current?.(null));
       markersRef.current.push(marker);
     });

@@ -7,14 +7,20 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .app-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; background: #fff; border-bottom: 1px solid #e0e0e0; }
 .logo { font-size: 18px; font-weight: 700; color: #e53935; }
 .header-controls { display: flex; align-items: center; gap: 10px; }
-.btn-geo { background: none; border: 1px solid #e0e0e0; border-radius: 6px; padding: 6px 10px; cursor: pointer; font-size: 16px; line-height: 1; color: #555; }
-.btn-geo:hover { background: #f5f5f5; }
-.btn-geo:disabled { opacity: 0.5; cursor: not-allowed; }
-.city-select { padding: 6px 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 13px; background: #fff; color: #1a1a1a; cursor: pointer; }
 .map-layout { display: flex; flex: 1; overflow: hidden; }
-.map-container { flex: 1; }
+.map-container { flex: 1; position: relative; }
 .sidebar { width: 340px; overflow-y: auto; background: #fff; border-left: 1px solid #e0e0e0; padding: 16px; }
 .sidebar h3 { margin-bottom: 12px; font-size: 15px; color: #555; }
+
+/* Icon buttons */
+.btn-icon { display: flex; align-items: center; justify-content: center; background: none; border: 1px solid #e0e0e0; border-radius: 6px; padding: 6px 8px; cursor: pointer; color: #555; line-height: 1; }
+.btn-icon:hover { background: #f5f5f5; }
+.btn-icon:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-geo { min-width: 34px; }
+.btn-sidebar-toggle { display: none; }
+
+/* City select */
+.city-select { padding: 6px 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 13px; background: #fff; color: #1a1a1a; cursor: pointer; }
 
 /* Cards */
 .merchant-list { display: flex; flex-direction: column; gap: 8px; }
@@ -28,6 +34,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .badge-top { background: #e8f5e9; color: #2e7d32; }
 .votes { font-size: 11px; color: #999; }
 
+/* Empty state */
+.list-empty { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 32px 16px; text-align: center; color: #999; }
+.list-empty p { font-size: 14px; }
+.list-empty-hint { font-size: 12px; color: #bbb; }
+
 /* Auth */
 .auth-page { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
 .auth-card { background: #fff; padding: 40px; border-radius: 12px; width: 360px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
@@ -37,21 +48,26 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 
 /* Merchant page */
 .merchant-page { max-width: 600px; margin: 40px auto; padding: 0 20px; }
-.back-link { color: #e53935; text-decoration: none; font-size: 14px; display: inline-block; margin-bottom: 16px; }
+.back-link { color: #e53935; text-decoration: none; font-size: 14px; display: inline-flex; align-items: center; gap: 4px; margin-bottom: 16px; }
+.back-link:hover { text-decoration: underline; }
 .merchant-page h2 { font-size: 24px; margin-bottom: 8px; }
 .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 24px 0; }
 .stat { background: #fff; border-radius: 8px; padding: 16px; border: 1px solid #e0e0e0; }
 .stat-label { display: block; font-size: 12px; color: #777; margin-bottom: 4px; }
-.stat-value { display: block; font-size: 20px; font-weight: 700; }
+.stat-value { display: block; font-size: 18px; font-weight: 700; }
+.stat-mcc { display: flex; align-items: center; gap: 6px; font-size: 15px; }
+.stat-icon { font-size: 20px; line-height: 1; }
 .vote-btn { display: block; width: 100%; text-align: center; margin-top: 8px; }
 
 /* Modal */
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 100; }
 .modal { background: #fff; border-radius: 12px; padding: 28px; width: 380px; max-width: 90vw; }
-.modal h3 { margin-bottom: 8px; }
+.modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.modal-header h3 { margin: 0; }
 .modal-merchant { color: #777; font-size: 14px; margin-bottom: 20px; }
 .mcc-options { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
-.mcc-option { padding: 10px 16px; border: 1px solid #ddd; border-radius: 6px; background: #fff; cursor: pointer; text-align: left; font-size: 14px; }
+.mcc-option { padding: 10px 16px; border: 1px solid #ddd; border-radius: 6px; background: #fff; cursor: pointer; text-align: left; font-size: 14px; display: flex; align-items: center; gap: 10px; }
+.mcc-option small { margin-left: auto; color: #aaa; font-size: 12px; }
 .mcc-option.selected { border-color: #e53935; background: #fff5f5; }
 .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
 
@@ -62,13 +78,41 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .btn-link { background: none; border: none; color: #e53935; cursor: pointer; font-size: 14px; padding: 4px; }
 .btn-link:hover { text-decoration: underline; }
 
-/* Map tooltip */
-.map-container { position: relative; }
-.map-tooltip { position: absolute; bottom: 24px; left: 16px; z-index: 10; background: #fff; border-radius: 8px; padding: 12px 16px; box-shadow: 0 4px 16px rgba(0,0,0,0.18); display: flex; flex-direction: column; gap: 4px; max-width: 260px; pointer-events: none; }
+/* Map tooltip — positioned near marker via inline style */
+.map-tooltip { position: absolute; z-index: 10; background: #fff; border-radius: 8px; padding: 10px 14px; box-shadow: 0 4px 16px rgba(0,0,0,0.18); display: flex; flex-direction: column; gap: 4px; max-width: 240px; pointer-events: none; transform: translateY(-50%); }
 .map-tooltip strong { font-size: 14px; }
 .map-tooltip span { font-size: 12px; color: #555; }
+
+/* Toast */
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1a1a1a; color: #fff; padding: 10px 20px; border-radius: 8px; display: flex; align-items: center; gap: 8px; font-size: 14px; z-index: 200; animation: toast-in 0.2s ease; }
+@keyframes toast-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(8px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
 
 /* Status */
 .list-status { color: #777; font-size: 14px; padding: 20px 0; text-align: center; }
 .page-status { text-align: center; padding: 60px 20px; color: #777; }
 .error { color: #c62828; font-size: 13px; margin-bottom: 8px; }
+
+/* Mobile */
+@media (max-width: 768px) {
+  .btn-sidebar-toggle { display: flex; }
+  .sidebar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-height: 50vh;
+    border-left: none;
+    border-top: 1px solid #e0e0e0;
+    border-radius: 12px 12px 0 0;
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
+    z-index: 50;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+  }
+  .sidebar--open { transform: translateY(0); }
+  .city-select { max-width: 120px; }
+}

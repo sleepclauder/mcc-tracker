@@ -2,7 +2,10 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import client from '../api/client';
 import VoteModal from '../components/VoteModal';
+import Toast from '../components/Toast';
+import { ArrowLeft } from '../components/Icons';
 import { isAuthenticated } from '../utils/auth';
+import { mccLabel, MCC_ICONS } from '../utils/mcc';
 
 export default function MerchantPage() {
   const { yandex_firm_id } = useParams();
@@ -10,6 +13,7 @@ export default function MerchantPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showVote, setShowVote] = useState(false);
+  const [toast, setToast] = useState(null);
 
   async function loadStats() {
     setLoading(true);
@@ -31,18 +35,26 @@ export default function MerchantPage() {
 
   return (
     <div className="merchant-page">
-      <Link to="/" className="back-link">← На карту</Link>
+      <Link to="/" className="back-link">
+        <ArrowLeft size={15} /> На карту
+      </Link>
       <h2>{stats.NAME || 'Магазин'}</h2>
       <p className="address">{stats.ADDRESS}</p>
 
       <div className="stats-grid">
         <div className="stat">
           <span className="stat-label">Последний MCC</span>
-          <span className="stat-value">{stats.LAST_MCC || '—'}</span>
+          <span className="stat-value stat-mcc">
+            {stats.LAST_MCC && <span className="stat-icon">{MCC_ICONS[stats.LAST_MCC] ?? '🏷'}</span>}
+            {mccLabel(stats.LAST_MCC)}
+          </span>
         </div>
         <div className="stat">
           <span className="stat-label">Топ за 30 дней</span>
-          <span className="stat-value">{stats.TOP_MCC_30D || '—'}</span>
+          <span className="stat-value stat-mcc">
+            {stats.TOP_MCC_30D && <span className="stat-icon">{MCC_ICONS[stats.TOP_MCC_30D] ?? '🏷'}</span>}
+            {mccLabel(stats.TOP_MCC_30D)}
+          </span>
         </div>
         <div className="stat">
           <span className="stat-label">Голосов всего</span>
@@ -63,9 +75,11 @@ export default function MerchantPage() {
         <VoteModal
           merchant={stats}
           onClose={() => setShowVote(false)}
-          onSuccess={loadStats}
+          onSuccess={() => { loadStats(); setToast('Голос учтён!'); }}
         />
       )}
+
+      {toast && <Toast message={toast} onDone={() => setToast(null)} />}
     </div>
   );
 }

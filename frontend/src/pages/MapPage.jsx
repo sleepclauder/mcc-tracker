@@ -4,15 +4,8 @@ import MerchantList from '../components/MerchantList';
 import { useMerchants } from '../hooks/useMerchants';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
-
-const MCC_LABELS = {
-  '5411': 'Продукты',
-  '5912': 'Аптека',
-  '5812': 'Ресторан',
-  '5541': 'АЗС',
-  '5311': 'Универмаг',
-  '5999': 'Прочее',
-};
+import { MCC_LABELS } from '../utils/mcc';
+import { MapPin, List } from '../components/Icons';
 
 const CITIES = [
   { name: 'Санкт-Петербург', lat: 59.9311, lon: 30.3161 },
@@ -30,8 +23,9 @@ const CITIES = [
 export default function MapPage() {
   const [center, setCenter] = useState({ lat: null, lon: null });
   const [flyTo, setFlyTo] = useState(null);
-  const [hoveredMerchant, setHoveredMerchant] = useState(null);
+  const [hoveredState, setHoveredState] = useState(null); // { merchant, x, y }
   const [geoStatus, setGeoStatus] = useState('idle'); // idle | loading | denied
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const { merchants, loading, error } = useMerchants(center.lat, center.lon, 1000);
   const { authenticated, logout } = useAuth();
   const navigate = useNavigate();
@@ -64,18 +58,20 @@ export default function MapPage() {
     if (city) moveTo(city.lat, city.lon);
   }
 
+  const hm = hoveredState?.merchant;
+
   return (
     <div className="map-page">
       <header className="app-header">
         <span className="logo">MCC Tracker</span>
         <div className="header-controls">
           <button
-            className="btn-geo"
+            className="btn-icon btn-geo"
             onClick={requestGeolocation}
             title="Определить моё местоположение"
             disabled={geoStatus === 'loading'}
           >
-            {geoStatus === 'loading' ? '...' : '📍'}
+            {geoStatus === 'loading' ? '…' : <MapPin size={18} />}
           </button>
           <select className="city-select" onChange={handleCitySelect} defaultValue="">
             <option value="" disabled>Выбрать город</option>
@@ -85,6 +81,14 @@ export default function MapPage() {
             ? <button className="btn-link" onClick={logout}>Выйти</button>
             : <button className="btn-link" onClick={() => navigate('/login')}>Войти</button>
           }
+          <button
+            className="btn-icon btn-sidebar-toggle"
+            onClick={() => setSidebarOpen(o => !o)}
+            title="Список магазинов"
+            aria-label="Список магазинов"
+          >
+            <List size={18} />
+          </button>
         </div>
       </header>
       <div className="map-layout">
@@ -92,26 +96,29 @@ export default function MapPage() {
           <Map
             onCenterChange={handleCenterChange}
             merchants={merchants}
-            onMerchantHover={setHoveredMerchant}
+            onMerchantHover={setHoveredState}
             flyTo={flyTo}
           />
-          {hoveredMerchant && (
-            <div className="map-tooltip">
-              <strong>{hoveredMerchant.NAME}</strong>
-              <span>{hoveredMerchant.ADDRESS}</span>
-              {hoveredMerchant.LAST_MCC && (
-                <span>Последний: {MCC_LABELS[hoveredMerchant.LAST_MCC] || hoveredMerchant.LAST_MCC} ({hoveredMerchant.LAST_MCC})</span>
+          {hm && (
+            <div
+              className="map-tooltip"
+              style={{ left: hoveredState.x + 14, top: hoveredState.y }}
+            >
+              <strong>{hm.NAME}</strong>
+              <span>{hm.ADDRESS}</span>
+              {hm.LAST_MCC && (
+                <span>Последний: {MCC_LABELS[hm.LAST_MCC] || hm.LAST_MCC} ({hm.LAST_MCC})</span>
               )}
-              {hoveredMerchant.TOP_MCC_30D && (
-                <span>Топ 30д: {MCC_LABELS[hoveredMerchant.TOP_MCC_30D] || hoveredMerchant.TOP_MCC_30D} ({hoveredMerchant.TOP_MCC_30D})</span>
+              {hm.TOP_MCC_30D && (
+                <span>Топ 30д: {MCC_LABELS[hm.TOP_MCC_30D] || hm.TOP_MCC_30D} ({hm.TOP_MCC_30D})</span>
               )}
-              {hoveredMerchant.VOTES_TOTAL > 0 && (
-                <span>{hoveredMerchant.VOTES_TOTAL} голос(ов)</span>
+              {hm.VOTES_TOTAL > 0 && (
+                <span>{hm.VOTES_TOTAL} голос(ов)</span>
               )}
             </div>
           )}
         </div>
-        <aside className="sidebar">
+        <aside className={`sidebar${sidebarOpen ? ' sidebar--open' : ''}`}>
           <h3>Магазины рядом</h3>
           <MerchantList merchants={merchants} loading={loading} error={error} />
         </aside>

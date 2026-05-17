@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import client from '../api/client';
+import { X } from './Icons';
 
 const COMMON_MCC = [
-  { code: '5411', label: 'Продукты (5411)' },
-  { code: '5912', label: 'Аптека (5912)' },
-  { code: '5812', label: 'Рестораны (5812)' },
-  { code: '5541', label: 'АЗС (5541)' },
-  { code: '5311', label: 'Универмаги (5311)' },
-  { code: '5999', label: 'Прочее (5999)' },
+  { code: '5411', label: 'Продукты', icon: '🛒' },
+  { code: '5912', label: 'Аптека', icon: '💊' },
+  { code: '5812', label: 'Рестораны', icon: '🍽' },
+  { code: '5541', label: 'АЗС', icon: '⛽' },
+  { code: '5311', label: 'Универмаги', icon: '🏬' },
+  { code: '5999', label: 'Прочее', icon: '🏷' },
 ];
 
 export default function VoteModal({ merchant, onClose, onSuccess }) {
@@ -40,16 +41,22 @@ export default function VoteModal({ merchant, onClose, onSuccess }) {
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <h3>Выберите MCC-код</h3>
+        <div className="modal-header">
+          <h3>Выберите MCC-код</h3>
+          <button className="btn-icon" onClick={onClose} aria-label="Закрыть">
+            <X size={18} />
+          </button>
+        </div>
         <p className="modal-merchant">{merchant.NAME}</p>
         <div className="mcc-options">
-          {COMMON_MCC.map(({ code, label }) => (
+          {COMMON_MCC.map(({ code, label, icon }) => (
             <button
               key={code}
               className={`mcc-option ${selected === code ? 'selected' : ''}`}
               onClick={() => setSelected(code)}
             >
-              {label}
+              <span aria-hidden="true">{icon}</span>
+              {' '}{label} <small>({code})</small>
             </button>
           ))}
         </div>
