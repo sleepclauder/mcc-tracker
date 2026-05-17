@@ -128,7 +128,7 @@ export default function MapPage() {
   return (
     <div className="map-page">
       <header className="app-header">
-        <span className="logo">MCC Tracker</span>
+        <span className="logo">ЧекБэк</span>
         <div className="header-controls">
           <button
             className="btn-icon btn-geo"

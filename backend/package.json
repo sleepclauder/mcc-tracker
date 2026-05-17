@@ -1,7 +1,7 @@
 {
-  "name": "mcc-tracker-backend",
+  "name": "checkback-backend",
   "version": "1.0.0",
-  "description": "MCC Tracker API",
+  "description": "CheckBack API",
   "main": "src/app.js",
   "scripts": {
     "start": "node src/app.js",
