@@ -21,7 +21,13 @@ const CITIES = [
 ];
 
 export default function MapPage() {
-  const [center, setCenter] = useState({ lat: null, lon: null });
+  const [center, setCenter] = useState(() => {
+    try {
+      const saved = localStorage.getItem('mcc_last_center');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return { lat: null, lon: null };
+  });
   const [flyTo, setFlyTo] = useState(null);
   const [hoveredState, setHoveredState] = useState(null); // { merchant, x, y }
   const [geoStatus, setGeoStatus] = useState('idle'); // idle | loading | denied
@@ -35,6 +41,7 @@ export default function MapPage() {
   function moveTo(lat, lon) {
     setCenter({ lat, lon });
     setFlyTo({ lat, lon });
+    try { localStorage.setItem('mcc_last_center', JSON.stringify({ lat, lon })); } catch {}
   }
 
   function requestGeolocation() {
@@ -49,10 +56,11 @@ export default function MapPage() {
     );
   }
 
-  useEffect(() => { requestGeolocation(); }, []);
+  useEffect(() => { if (center.lat === null) requestGeolocation(); }, []);
 
   const handleCenterChange = useCallback((lat, lon) => {
     setCenter({ lat, lon });
+    try { localStorage.setItem('mcc_last_center', JSON.stringify({ lat, lon })); } catch {}
   }, []);
 
   function handleCitySelect(e) {
