@@ -6,6 +6,7 @@ import Map from './Map';
 const mockMap = {
   on: vi.fn(),
   getCenter: vi.fn(() => [37.617, 55.755]),
+  setCenter: vi.fn(),
   destroy: vi.fn(),
 };
 const MockMarker = vi.fn(() => ({ on: vi.fn(), destroy: vi.fn() }));
@@ -21,7 +22,7 @@ import { load } from '@2gis/mapgl';
 
 const merchants = [
   { YANDEX_FIRM_ID: 'spb_001', NAME: 'Пятёрочка', ADDRESS: 'Невский пр., 88', LAT: 59.93, LON: 30.36, LAST_MCC: null, VOTES_TOTAL: 0 },
-  { YANDEX_FIRM_ID: 'spb_002', NAME: 'Магнит',    ADDRESS: 'ул. Рубинштейна, 15', LAT: 59.92, LON: 30.34, LAST_MCC: '5411', VOTES_TOTAL: 3 },
+  { YANDEX_FIRM_ID: 'spb_002', NAME: 'Магнит', ADDRESS: 'ул. Рубинштейна, 15', LAT: 59.92, LON: 30.34, LAST_MCC: '5411', VOTES_TOTAL: 3 },
 ];
 
 function renderMap(props = {}) {
@@ -66,6 +67,17 @@ describe('Map', () => {
   it('creates markers for each merchant', async () => {
     renderMap({ merchants });
     await vi.waitFor(() => expect(MockMarker).toHaveBeenCalledTimes(2));
+  });
+
+  it('calls setCenter when flyTo prop changes', async () => {
+    const { rerender } = renderMap();
+    await vi.waitFor(() => expect(mockMap.on).toHaveBeenCalled());
+    rerender(
+      <MemoryRouter>
+        <Map flyTo={{ lat: 59.93, lon: 30.32 }} />
+      </MemoryRouter>
+    );
+    expect(mockMap.setCenter).toHaveBeenCalledWith([30.32, 59.93], { animate: true });
   });
 
   it('destroys map on unmount', async () => {

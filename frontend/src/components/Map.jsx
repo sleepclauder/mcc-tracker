@@ -2,9 +2,9 @@ import { useEffect, useRef } from 'react';
 import { load } from '@2gis/mapgl';
 import { useNavigate } from 'react-router-dom';
 
-export default function Map({ onCenterChange, merchants = [], onMerchantHover }) {
+export default function Map({ onCenterChange, merchants = [], onMerchantHover, flyTo }) {
   const containerRef = useRef(null);
-  const mapInstanceRef = useRef(null); // { map, mapgl }
+  const mapInstanceRef = useRef(null);
   const markersRef = useRef([]);
   const merchantsRef = useRef(merchants);
   const onMerchantHoverRef = useRef(onMerchantHover);
@@ -56,6 +56,11 @@ export default function Map({ onCenterChange, merchants = [], onMerchantHover })
     const { map, mapgl } = mapInstanceRef.current;
     renderMarkers(map, mapgl, merchants);
   }, [merchants]);
+
+  useEffect(() => {
+    if (!flyTo || !mapInstanceRef.current) return;
+    mapInstanceRef.current.map.setCenter([flyTo.lon, flyTo.lat], { animate: true });
+  }, [flyTo]);
 
   return <div ref={containerRef} style={{ width: '100%', height: '100%' }} />;
 }
