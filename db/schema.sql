@@ -35,7 +35,11 @@ CREATE TABLE merchants (
     address         VARCHAR2(1000),
     lat             NUMBER(10,7),
     lon             NUMBER(10,7),
-    created_at      TIMESTAMP       DEFAULT SYSTIMESTAMP NOT NULL
+    created_at      TIMESTAMP       DEFAULT SYSTIMESTAMP NOT NULL,
+    gis_url         VARCHAR2(500),
+    gis_rating      NUMBER(3,1),
+    gis_review_count NUMBER DEFAULT 0,
+    gis_fetched_at  TIMESTAMP
 );
 
 CREATE INDEX idx_merchants_yid ON merchants(yandex_firm_id);
@@ -70,6 +74,10 @@ SELECT
     m.address,
     m.lat,
     m.lon,
+    m.gis_url,
+    m.gis_rating,
+    m.gis_review_count,
+    m.gis_fetched_at,
     -- Последний проголосованный MCC
     (SELECT v.mcc_code
      FROM   mcc_votes v

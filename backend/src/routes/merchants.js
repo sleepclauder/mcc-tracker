@@ -24,7 +24,8 @@ module.exports = function makeMerchantsRouter(db) {
     try {
       const result = await db.execute(
         `SELECT s.yandex_firm_id, s.name, s.address, s.lat, s.lon,
-                s.last_mcc, s.top_mcc_30d, s.votes_total, s.votes_30d
+                s.last_mcc, s.top_mcc_30d, s.votes_total, s.votes_30d,
+                s.gis_rating, s.gis_review_count
          FROM v_merchant_stats s
          WHERE s.lat BETWEEN :lat_min AND :lat_max
            AND s.lon BETWEEN :lon_min AND :lon_max`,

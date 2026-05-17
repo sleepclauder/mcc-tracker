@@ -10,6 +10,8 @@ const merchant = {
   LAST_MCC: '5411',
   TOP_MCC_30D: '5411',
   VOTES_TOTAL: 5,
+  GIS_RATING: null,
+  GIS_REVIEW_COUNT: 0,
 };
 
 function renderCard(m = merchant) {
@@ -50,5 +52,16 @@ describe('MerchantCard', () => {
   it('does not render MCC badges when null', () => {
     renderCard({ ...merchant, LAST_MCC: null, TOP_MCC_30D: null, VOTES_TOTAL: 0 });
     expect(screen.queryByText(/Последний/)).not.toBeInTheDocument();
+  });
+
+  it('shows gis rating when available', () => {
+    renderCard({ ...merchant, GIS_RATING: 4.5, GIS_REVIEW_COUNT: 123 });
+    expect(screen.getByText(/4\.5/)).toBeInTheDocument();
+    expect(screen.getByText(/123 отз\./)).toBeInTheDocument();
+  });
+
+  it('does not show gis rating when null', () => {
+    renderCard({ ...merchant, GIS_RATING: null });
+    expect(screen.queryByText(/отз\./)).not.toBeInTheDocument();
   });
 });

@@ -7,6 +7,20 @@ import { ArrowLeft } from '../components/Icons';
 import { isAuthenticated } from '../utils/auth';
 import { mccLabel, MCC_ICONS } from '../utils/mcc';
 
+function GisReviewsLink({ gisUrl }) {
+  if (!gisUrl) return null;
+  return (
+    <a
+      href={`${gisUrl}/tab/reviews`}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="btn-secondary gis-reviews-btn"
+    >
+      ★ Отзывы в 2GIS
+    </a>
+  );
+}
+
 export default function MerchantPage() {
   const { yandex_firm_id } = useParams();
   const [stats, setStats] = useState(null);
@@ -40,6 +54,15 @@ export default function MerchantPage() {
       </Link>
       <h2>{stats.NAME || 'Магазин'}</h2>
       <p className="address">{stats.ADDRESS}</p>
+      {stats.GIS_RATING && (
+        <p className="merchant-gis-rating">
+          <span className="gis-star">★</span>
+          <strong>{Number(stats.GIS_RATING).toFixed(1)}</strong>
+          {stats.GIS_REVIEW_COUNT > 0 && (
+            <span className="gis-reviews"> · {stats.GIS_REVIEW_COUNT} отзыв(ов) в 2GIS</span>
+          )}
+        </p>
+      )}
       <p className="merchant-hint">MCC — код категории торговой точки. Чем точнее код, тем выше кэшбэк по вашей карте.</p>
 
       <div className="stats-grid">
@@ -67,10 +90,13 @@ export default function MerchantPage() {
         </div>
       </div>
 
-      {isAuthenticated()
-        ? <button className="btn-primary vote-btn" onClick={() => setShowVote(true)}>Проголосовать за MCC</button>
-        : <Link to="/login" className="btn-primary vote-btn">Войдите чтобы проголосовать</Link>
-      }
+      <div className="merchant-actions">
+        {isAuthenticated()
+          ? <button className="btn-primary vote-btn" onClick={() => setShowVote(true)}>Проголосовать за MCC</button>
+          : <Link to="/login" className="btn-primary vote-btn">Войдите чтобы проголосовать</Link>
+        }
+        <GisReviewsLink gisUrl={stats.GIS_URL} />
+      </div>
 
       {showVote && (
         <VoteModal
