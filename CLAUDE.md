@@ -114,6 +114,8 @@ CI/CD (GitHub Actions) triggers automatically on push to `main`: runs both test 
 
 **GIS_KEY:** env var on VM for 2GIS Catalog API (`/gis/nearby`). If expired or invalid (403), the route returns `[]` — app degrades gracefully to DB-only data. Stored in `backend/.env` on VM (never in git).
 
+**2GIS Catalog API limits** (`/3.0/items`): `radius` max **2000 m** (not 5000), `page_size` max **10** (not 50). Both violations return HTTP 200 with `meta.code: 400` in the body — `r.ok` is `true` but `result` is absent. Always check `data.meta?.code === 200` after parsing. The `/gis/nearby` backend route caps both automatically.
+
 **Frontend env vars:**
 - `VITE_API_URL` — backend base URL (without trailing slash, no `/api` suffix)
 - `VITE_2GIS_KEY` — 2GIS MapGL key (demo key, ~1 month validity from May 2026)
@@ -124,7 +126,7 @@ CI/CD (GitHub Actions) triggers automatically on push to `main`: runs both test 
 
 **node_modules must not be committed.** `.gitignore` covers both `node_modules/` and `frontend/node_modules/`. If they appear tracked, run `git rm -r --cached frontend/node_modules/`.
 
-**OSM seed data:** `db/seed_osm_spb.js` fetches up to 5000 nodes from Overpass API for SPb bounding box (59.75–60.15 lat, 29.50–30.75 lon). Run on VM — needs Oracle wallet. Inserts a seed vote per merchant so MCC shows on map immediately.
+**OSM seed data:** `db/seed_osm_spb.js` fetches up to 10000 elements (`node` + `way`) from Overpass API for SPb bounding box (59.75–60.15 lat, 29.50–30.75 lon). `way` elements use `out body center` to get centroid coordinates; stored with ID prefix `osm_w_<id>` (nodes use `osm_<id>`). Run on VM — needs Oracle wallet. Inserts a seed vote per merchant so MCC shows on map immediately. Timeout raised to 180 s for larger queries.
 
 ## MCC codes in use
 
