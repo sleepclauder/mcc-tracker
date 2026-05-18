@@ -1,12 +1,13 @@
 import { useEffect, useRef } from 'react';
 import { load } from '@2gis/mapgl';
 import { useNavigate } from 'react-router-dom';
-import { markerIcon } from '../utils/mcc';
+import { markerIcon, userLocationIcon } from '../utils/mcc';
 
-export default function Map({ onCenterChange, merchants = [], onMerchantHover, flyTo }) {
+export default function Map({ onCenterChange, merchants = [], onMerchantHover, flyTo, userLocation }) {
   const containerRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markersRef = useRef([]);
+  const userMarkerRef = useRef(null);
   const merchantsRef = useRef(merchants);
   const onMerchantHoverRef = useRef(onMerchantHover);
   const navigate = useNavigate();
@@ -56,6 +57,8 @@ export default function Map({ onCenterChange, merchants = [], onMerchantHover, f
     return () => {
       markersRef.current.forEach(m => m.destroy());
       markersRef.current = [];
+      userMarkerRef.current?.destroy();
+      userMarkerRef.current = null;
       mapInstanceRef.current?.map.destroy();
       mapInstanceRef.current = null;
     };
@@ -71,6 +74,17 @@ export default function Map({ onCenterChange, merchants = [], onMerchantHover, f
     if (!flyTo || !mapInstanceRef.current) return;
     mapInstanceRef.current.map.setCenter([flyTo.lon, flyTo.lat], { animate: true });
   }, [flyTo]);
+
+  useEffect(() => {
+    if (!userLocation || !mapInstanceRef.current) return;
+    const { mapgl, map } = mapInstanceRef.current;
+    userMarkerRef.current?.destroy();
+    userMarkerRef.current = new mapgl.Marker(map, {
+      coordinates: [userLocation.lon, userLocation.lat],
+      icon: userLocationIcon(),
+      size: [40, 40],
+    });
+  }, [userLocation]);
 
   return <div ref={containerRef} style={{ width: '100%', height: '100%' }} />;
 }

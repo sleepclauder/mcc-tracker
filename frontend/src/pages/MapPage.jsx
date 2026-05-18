@@ -62,6 +62,7 @@ export default function MapPage() {
     return { lat: null, lon: null };
   });
   const [flyTo, setFlyTo] = useState(null);
+  const [userLocation, setUserLocation] = useState(null);
   const [hoveredState, setHoveredState] = useState(null);
   const [geoStatus, setGeoStatus] = useState('idle');
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -92,7 +93,11 @@ export default function MapPage() {
     if (!navigator.geolocation) { setGeoStatus('denied'); return; }
     setGeoStatus('loading');
     navigator.geolocation.getCurrentPosition(
-      ({ coords }) => { setGeoStatus('idle'); moveTo(coords.latitude, coords.longitude); },
+      ({ coords }) => {
+        setGeoStatus('idle');
+        setUserLocation({ lat: coords.latitude, lon: coords.longitude });
+        moveTo(coords.latitude, coords.longitude);
+      },
       () => setGeoStatus('denied')
     );
   }
@@ -260,6 +265,7 @@ export default function MapPage() {
             merchants={filteredMerchants}
             onMerchantHover={setHoveredState}
             flyTo={flyTo}
+            userLocation={userLocation}
           />
           {hm && (
             <div
