@@ -117,7 +117,7 @@ export default function MapPage() {
     );
   }
 
-  useEffect(() => { if (center.lat === null) requestGeolocation(); }, []);
+  useEffect(() => { requestGeolocation(); }, []);
 
   const handleCenterChange = useCallback((lat, lon) => {
     setCenter({ lat, lon });
