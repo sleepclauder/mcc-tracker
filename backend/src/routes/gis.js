@@ -10,7 +10,7 @@ module.exports = function makeGisRouter() {
 
     const lat = parseFloat(req.query.lat);
     const lon = parseFloat(req.query.lon);
-    const radius = req.query.radius_m ? Math.min(parseInt(req.query.radius_m), 5000) : 1000;
+    const radius = req.query.radius_m ? Math.min(parseInt(req.query.radius_m), 2000) : 1000;
 
     if (isNaN(lat) || isNaN(lon)) return res.status(400).json({ error: 'lat and lon required' });
 
