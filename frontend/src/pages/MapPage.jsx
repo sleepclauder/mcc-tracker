@@ -73,7 +73,7 @@ export default function MapPage() {
   const [selectedBank, setSelectedBank] = useState(null);
   const [selectedBankCategories, setSelectedBankCategories] = useState(new Set());
 
-  const { merchants, loading, error } = useNearbyMerchants(center.lat, center.lon, 1000);
+  const { merchants, loading, error } = useNearbyMerchants(center.lat, center.lon, 3000);
   const { authenticated, userEmail, logout } = useAuth();
   const navigate = useNavigate();
   const [bestCashback, setBestCashback] = useState([]); // [{category_name, cashback_pct, bank_name}]
