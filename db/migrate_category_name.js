@@ -11,8 +11,9 @@ async function run() {
   await db.execute(`ALTER TABLE card_cashback_rules RENAME COLUMN mcc_code TO category_name`);
   console.log('Column renamed.');
 
-  await db.execute(`ALTER TABLE card_cashback_rules MODIFY category_name VARCHAR2(100) NOT NULL`);
-  console.log('Column type updated to VARCHAR2(100).');
+  // Extend length separately — MODIFY VARCHAR2(100 CHAR) must not be skipped even if NOT NULL is already set
+  await db.execute(`ALTER TABLE card_cashback_rules MODIFY category_name VARCHAR2(100 CHAR)`);
+  console.log('Column length extended to VARCHAR2(100 CHAR).');
 
   await db.execute(`ALTER TABLE card_cashback_rules DROP CONSTRAINT uq_card_month_mcc`);
   await db.execute(`ALTER TABLE card_cashback_rules ADD CONSTRAINT uq_card_month_cat UNIQUE (card_id, rule_month, category_name)`);
