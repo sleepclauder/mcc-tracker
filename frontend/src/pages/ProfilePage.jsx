@@ -3,7 +3,16 @@ import { useNavigate } from 'react-router-dom';
 import client from '../api/client';
 import { MCC_LABELS, MCC_ICONS } from '../utils/mcc';
 import { CITIES, CITY_KEY, CITY_NAME_KEY } from '../utils/cities';
-import { BANK_PRESETS, getBankCategoryForMcc } from '../utils/bankMcc';
+import { BANK_PRESETS, getBankCategoryForMcc, BANK_SPECIAL_FEATURES } from '../utils/bankMcc';
+
+const SPECIALS_LS_KEY = 'cb_specials_v1';
+
+function loadSpecials() {
+  try { return JSON.parse(localStorage.getItem(SPECIALS_LS_KEY)) || {}; } catch { return {}; }
+}
+function saveSpecials(data) {
+  try { localStorage.setItem(SPECIALS_LS_KEY, JSON.stringify(data)); } catch {}
+}
 import { useAuth } from '../hooks/useAuth';
 
 const BANK_META = {
@@ -102,6 +111,7 @@ export default function ProfilePage() {
   const [addOpen, setAddOpen] = useState(false);
   const [newBank, setNewBank] = useState(BANKS[0]);
   const [newCardName, setNewCardName] = useState('');
+  const [specials, setSpecials] = useState(loadSpecials); // cardId → { featureId → { enabled, pct } }
 
   useEffect(() => {
     client.get('/cards').then(r => setCards(r.data)).catch(() => {});
@@ -172,6 +182,26 @@ export default function ProfilePage() {
       return { ...prev, [cardId]: list };
     });
     setDirty(prev => ({ ...prev, [cardId]: true }));
+  }
+
+  function toggleSpecial(cardId, featureId) {
+    setSpecials(prev => {
+      const card = prev[cardId] || {};
+      const feat = card[featureId] || { enabled: false, pct: 5 };
+      const next = { ...prev, [cardId]: { ...card, [featureId]: { ...feat, enabled: !feat.enabled } } };
+      saveSpecials(next);
+      return next;
+    });
+  }
+
+  function updateSpecialPct(cardId, featureId, pct) {
+    setSpecials(prev => {
+      const card = prev[cardId] || {};
+      const feat = card[featureId] || { enabled: true, pct: 5 };
+      const next = { ...prev, [cardId]: { ...card, [featureId]: { ...feat, pct } } };
+      saveSpecials(next);
+      return next;
+    });
   }
 
   async function saveRules(cardId) {
@@ -333,6 +363,42 @@ export default function ProfilePage() {
                 )}
               </div>
             </div>
+
+            {(BANK_SPECIAL_FEATURES[card.bank_name] || []).length > 0 && (
+              <div className="profile-specials">
+                <p className="profile-specials-title">Спецпрограммы</p>
+                {BANK_SPECIAL_FEATURES[card.bank_name].map(feat => {
+                  const state = (specials[card.id] || {})[feat.id] || { enabled: false, pct: 5 };
+                  return (
+                    <div key={feat.id} className={`profile-special-row${state.enabled ? ' profile-special-row--on' : ''}`}>
+                      <button
+                        className="profile-special-toggle"
+                        onClick={() => toggleSpecial(card.id, feat.id)}
+                        title={feat.note}
+                      >
+                        <span className="profile-special-dot" />
+                        <span className="profile-special-name">{feat.name}</span>
+                        <span className="profile-special-badge">Город</span>
+                      </button>
+                      {state.enabled && (
+                        <div className="profile-rule-pct-wrap">
+                          <input
+                            className="profile-rule-pct"
+                            type="number"
+                            min="0.1"
+                            max="100"
+                            step="0.5"
+                            value={state.pct}
+                            onChange={e => updateSpecialPct(card.id, feat.id, e.target.value)}
+                          />
+                          <span className="profile-rule-pct-sign">%</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         ))}
 

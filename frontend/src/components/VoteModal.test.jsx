@@ -26,8 +26,8 @@ describe('VoteModal', () => {
 
   it('renders MCC options', () => {
     render(<VoteModal merchant={merchant} onClose={vi.fn()} />);
-    expect(screen.getByText(/Продукты/)).toBeInTheDocument();
-    expect(screen.getByText(/Аптека/)).toBeInTheDocument();
+    expect(screen.getAllByText(/Продукты/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Аптека/).length).toBeGreaterThan(0);
   });
 
   it('vote button disabled until MCC selected', () => {
@@ -37,7 +37,7 @@ describe('VoteModal', () => {
 
   it('selects MCC on click', () => {
     render(<VoteModal merchant={merchant} onClose={vi.fn()} />);
-    fireEvent.click(screen.getByText(/Продукты/));
+    fireEvent.click(screen.getAllByText(/Продукты/)[0]);
     expect(screen.getByText('Проголосовать')).not.toBeDisabled();
   });
 
@@ -54,7 +54,7 @@ describe('VoteModal', () => {
     const onSuccess = vi.fn();
     render(<VoteModal merchant={merchant} onClose={onClose} onSuccess={onSuccess} />);
 
-    fireEvent.click(screen.getByText(/Продукты/));
+    fireEvent.click(screen.getAllByText(/Продукты/)[0]);
     fireEvent.click(screen.getByText('Проголосовать'));
 
     await waitFor(() => {
@@ -67,7 +67,7 @@ describe('VoteModal', () => {
     client.post.mockRejectedValue({ response: { data: { error: 'Ошибка сервера' } } });
     render(<VoteModal merchant={merchant} onClose={vi.fn()} />);
 
-    fireEvent.click(screen.getByText(/Продукты/));
+    fireEvent.click(screen.getAllByText(/Продукты/)[0]);
     fireEvent.click(screen.getByText('Проголосовать'));
 
     await waitFor(() => {
