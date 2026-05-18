@@ -13,6 +13,7 @@ app.use('/merchants', require('./routes/merchants')(db));
 app.use('/merchants', require('./routes/stats')(db));
 app.use('/votes',     require('./routes/votes')(db));
 app.use('/cards',     require('./routes/cards')(db));
+app.use('/gis',       require('./routes/gis')());
 
 app.get('/health', (req, res) => res.json({ ok: true }));
 

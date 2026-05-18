@@ -24,7 +24,7 @@ export default function Map({ onCenterChange, merchants = [], onMerchantHover, f
         iconWidth: 32,
         iconHeight: 32,
       });
-      marker.on('click', () => navigate(`/merchant/${merchant.YANDEX_FIRM_ID}`));
+      marker.on('click', () => navigate(`/merchant/${merchant.YANDEX_FIRM_ID}`, { state: { merchant } }));
       marker.on('mouseover', (e) => {
         const rect = containerRef.current.getBoundingClientRect();
         const x = (e.originalEvent?.clientX ?? 0) - rect.left;

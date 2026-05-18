@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import Map from '../components/Map';
 import MerchantList from '../components/MerchantList';
-import { useMerchants } from '../hooks/useMerchants';
+import { useNearbyMerchants } from '../hooks/useNearbyMerchants';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { MCC_LABELS, MCC_ICONS } from '../utils/mcc';
@@ -70,7 +70,7 @@ export default function MapPage() {
   const [selectedBank, setSelectedBank] = useState(null);
   const [selectedBankCategories, setSelectedBankCategories] = useState(new Set());
 
-  const { merchants, loading, error } = useMerchants(center.lat, center.lon, 1000);
+  const { merchants, loading, error } = useNearbyMerchants(center.lat, center.lon, 1000);
   const { authenticated, userEmail, logout } = useAuth();
   const navigate = useNavigate();
   const [bestCashback, setBestCashback] = useState([]); // [{category_name, cashback_pct, bank_name}]

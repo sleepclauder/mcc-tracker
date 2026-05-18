@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useLocation, Link } from 'react-router-dom';
 import client from '../api/client';
 import VoteModal from '../components/VoteModal';
 import Toast from '../components/Toast';
@@ -43,6 +43,7 @@ function BankCoverage({ mcc }) {
 
 export default function MerchantPage() {
   const { yandex_firm_id } = useParams();
+  const location = useLocation();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -55,7 +56,13 @@ export default function MerchantPage() {
       const { data } = await client.get(`/merchants/${yandex_firm_id}/stats`);
       setStats(data);
     } catch (e) {
-      setError(e.response?.data?.error || 'Ошибка загрузки');
+      const isNotFound = e.response?.status === 404;
+      const fallback = location.state?.merchant;
+      if (isNotFound && fallback) {
+        setStats({ ...fallback, VOTES_TOTAL: 0, VOTES_30D: 0, LAST_MCC: null, TOP_MCC_30D: null });
+      } else {
+        setError(e.response?.data?.error || 'Ошибка загрузки');
+      }
     } finally {
       setLoading(false);
     }
