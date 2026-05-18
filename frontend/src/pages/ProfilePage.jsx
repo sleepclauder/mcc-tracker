@@ -109,6 +109,7 @@ export default function ProfilePage() {
   const [newBank, setNewBank] = useState(BANKS[0]);
   const [newCardName, setNewCardName] = useState('');
   const [specials, setSpecials] = useState(loadSpecials); // cardId → { featureId → { enabled, pct } }
+  const [saveError, setSaveError] = useState({});  // cardId → string
 
   useEffect(() => {
     client.get('/cards').then(r => setCards(r.data)).catch(() => {});
@@ -204,6 +205,7 @@ export default function ProfilePage() {
 
   async function saveRules(cardId) {
     setSaving(prev => ({ ...prev, [cardId]: true }));
+    setSaveError(prev => ({ ...prev, [cardId]: null }));
     try {
       await client.put(`/cards/${cardId}/rules`, {
         month,
@@ -213,7 +215,10 @@ export default function ProfilePage() {
         })),
       });
       setDirty(prev => ({ ...prev, [cardId]: false }));
-    } catch {}
+    } catch (e) {
+      const msg = e?.response?.data?.error || 'Ошибка сохранения';
+      setSaveError(prev => ({ ...prev, [cardId]: msg }));
+    }
     setSaving(prev => ({ ...prev, [cardId]: false }));
   }
 
@@ -359,6 +364,9 @@ export default function ProfilePage() {
                   >
                     {saving[card.id] ? 'Сохраняем…' : 'Сохранить'}
                   </button>
+                )}
+                {saveError[card.id] && (
+                  <span className="profile-save-error">{saveError[card.id]}</span>
                 )}
               </div>
             </div>

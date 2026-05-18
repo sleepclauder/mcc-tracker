@@ -167,7 +167,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .profile-rule-pct { width: 64px; font-size: 14px; border: 1px solid #e0e0e0; border-radius: 6px; padding: 6px 8px; text-align: right; }
 .profile-rule-pct-sign { font-size: 14px; font-weight: 600; color: #555; }
 
-.profile-rules-actions { display: flex; align-items: center; gap: 12px; margin-top: 8px; }
+.profile-rules-actions { display: flex; align-items: center; gap: 12px; margin-top: 8px; flex-wrap: wrap; }
+.profile-save-error { font-size: 13px; color: #e53935; }
 .btn-add-rule { background: none; border: 1px dashed #bbb; border-radius: 6px; padding: 5px 12px; font-size: 13px; color: #555; cursor: pointer; }
 .btn-add-rule:hover { border-color: #888; color: #333; }
 .btn-add-rule:disabled { opacity: 0.4; cursor: not-allowed; }
