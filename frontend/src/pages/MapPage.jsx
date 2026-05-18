@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { MCC_LABELS, MCC_ICONS } from '../utils/mcc';
 import { CITIES, CITY_KEY, CITY_NAME_KEY } from '../utils/cities';
 import { MapPin, List } from '../components/Icons';
+import Toast from '../components/Toast';
 import { getBestCashbackForMcc, BANK_CATEGORIES } from '../utils/bankMcc';
 import client from '../api/client';
 
@@ -63,6 +64,7 @@ export default function MapPage() {
   });
   const [flyTo, setFlyTo] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
+  const [toast, setToast] = useState(null);
   const [hoveredState, setHoveredState] = useState(null);
   const [geoStatus, setGeoStatus] = useState('idle');
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -90,7 +92,11 @@ export default function MapPage() {
   }
 
   function requestGeolocation() {
-    if (!navigator.geolocation) { setGeoStatus('denied'); return; }
+    if (!navigator.geolocation) {
+      setGeoStatus('denied');
+      setToast({ message: 'Геолокация недоступна — сайт должен открываться по HTTPS', type: 'error' });
+      return;
+    }
     setGeoStatus('loading');
     navigator.geolocation.getCurrentPosition(
       ({ coords }) => {
@@ -98,7 +104,10 @@ export default function MapPage() {
         setUserLocation({ lat: coords.latitude, lon: coords.longitude });
         moveTo(coords.latitude, coords.longitude);
       },
-      () => setGeoStatus('denied')
+      () => {
+        setGeoStatus('denied');
+        setToast({ message: 'Браузер заблокировал геолокацию — разрешите доступ в настройках сайта', type: 'error' });
+      }
     );
   }
 
@@ -301,6 +310,7 @@ export default function MapPage() {
           <MerchantList merchants={filteredMerchants} loading={loading} error={error} />
         </aside>
       </div>
+      {toast && <Toast message={toast.message} type={toast.type} onDone={() => setToast(null)} />}
     </div>
   );
 }
