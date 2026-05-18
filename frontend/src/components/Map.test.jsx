@@ -5,12 +5,8 @@ import Map from './Map';
 
 const mockMap = {
   on: vi.fn(),
-  getCenter: vi.fn(() => [37.617, 55.755]),
+  getCenter: vi.fn(() => [30.36, 59.93]),
   getZoom: vi.fn(() => 18),
-  getBounds: vi.fn(() => ({
-    southWest: [30.30, 59.90],
-    northEast: [30.40, 60.00],
-  })),
   setCenter: vi.fn(),
   setZoom: vi.fn(),
   destroy: vi.fn(),
@@ -65,12 +61,12 @@ describe('Map', () => {
 
   it('calls onCenterChange with lat/lon on moveend', async () => {
     const onCenterChange = vi.fn();
-    mockMap.getCenter.mockReturnValue([37.617, 55.755]);
+    mockMap.getCenter.mockReturnValue([30.36, 59.93]);
     renderMap({ onCenterChange });
     await vi.waitFor(() => expect(mockMap.on).toHaveBeenCalled());
     const handler = mockMap.on.mock.calls.find(([e]) => e === 'moveend')[1];
     handler();
-    expect(onCenterChange).toHaveBeenCalledWith(55.755, 37.617);
+    expect(onCenterChange).toHaveBeenCalledWith(59.93, 30.36);
   });
 
   it('creates markers for merchants at high zoom', async () => {

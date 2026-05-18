@@ -4,6 +4,9 @@ import Supercluster from 'supercluster';
 import { useNavigate } from 'react-router-dom';
 import { markerIcon, userLocationIcon } from '../utils/mcc';
 
+const LAT_PER_METER = 1 / 111000;
+const CLUSTER_MAX_ZOOM = 14;
+
 function toFeatures(merchants) {
   return merchants
     .filter(m => m.LAT != null && m.LON != null)
@@ -14,20 +17,22 @@ function toFeatures(merchants) {
     }));
 }
 
-function clusterEl(count) {
-  const size = count < 10 ? 36 : count < 100 ? 44 : 52;
+// Build bbox from center + radius (avoids getBounds() which may throw before style loads)
+function centerToBbox(lon, lat, radiusM = 4000) {
+  const dlat = radiusM * LAT_PER_METER;
+  const dlon = dlat / Math.cos((lat * Math.PI) / 180);
+  return [lon - dlon, lat - dlat, lon + dlon, lat + dlat];
+}
+
+function clusterIcon(count) {
   const label = count >= 1000 ? `${Math.floor(count / 1000)}k` : String(count);
-  const el = document.createElement('div');
-  el.style.cssText = [
-    `width:${size}px`, `height:${size}px`, 'border-radius:50%',
-    'background:#1e88e5', 'border:3px solid #fff',
-    'box-shadow:0 2px 6px rgba(0,0,0,.3)',
-    'display:flex', 'align-items:center', 'justify-content:center',
-    'color:#fff', `font-weight:700`, `font-size:${count < 100 ? 13 : 11}px`,
-    'cursor:pointer', 'font-family:sans-serif', 'user-select:none',
-  ].join(';');
-  el.textContent = label;
-  return { el, size };
+  const size = count < 10 ? 36 : count < 100 ? 44 : 52;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">
+    <circle cx="${size / 2}" cy="${size / 2}" r="${size / 2 - 2}" fill="#1e88e5" stroke="#fff" stroke-width="3"/>
+    <text x="50%" y="50%" dominant-baseline="central" text-anchor="middle"
+      font-family="sans-serif" font-size="${count < 100 ? 13 : 11}" font-weight="bold" fill="#fff">${label}</text>
+  </svg>`;
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 }
 
 export default function Map({ onCenterChange, merchants = [], onMerchantHover, flyTo, userLocation }) {
@@ -49,49 +54,53 @@ export default function Map({ onCenterChange, merchants = [], onMerchantHover, f
     markersRef.current.forEach(m => m.destroy());
     markersRef.current = [];
 
-    const bounds = map.getBounds();
-    if (!bounds) return;
-    const zoom = Math.floor(map.getZoom());
-    const bbox = [bounds.southWest[0], bounds.southWest[1], bounds.northEast[0], bounds.northEast[1]];
-    const clusters = clusterRef.current.getClusters(bbox, zoom);
+    try {
+      const [lon, lat] = map.getCenter();
+      const zoom = Math.floor(map.getZoom());
+      const bbox = centerToBbox(lon, lat);
+      const clusters = clusterRef.current.getClusters(bbox, zoom);
 
-    clusters.forEach(cluster => {
-      const [lon, lat] = cluster.geometry.coordinates;
-      const props = cluster.properties;
+      clusters.forEach(cluster => {
+        const [clon, clat] = cluster.geometry.coordinates;
+        const props = cluster.properties;
 
-      if (props.cluster) {
-        const { el, size } = clusterEl(props.point_count);
-        const half = size / 2;
-        const marker = new mapgl.HtmlMarker(map, {
-          coordinates: [lon, lat],
-          html: el,
-          anchor: [half, half],
-        });
-        el.addEventListener('click', () => {
-          const expansionZoom = Math.min(clusterRef.current.getClusterExpansionZoom(props.cluster_id), 18);
-          map.setCenter([lon, lat], { animate: true });
-          map.setZoom(expansionZoom, { animate: true });
-        });
-        markersRef.current.push(marker);
-      } else {
-        const merchant = props;
-        const marker = new mapgl.Marker(map, {
-          coordinates: [lon, lat],
-          icon: markerIcon(merchant.LAST_MCC),
-          size: [32, 32],
-        });
-        marker.on('click', () => navigate(`/merchant/${merchant.YANDEX_FIRM_ID}`, { state: { merchant } }));
-        marker.on('mouseover', e => {
-          const rect = containerRef.current?.getBoundingClientRect();
-          if (!rect) return;
-          const x = (e.originalEvent?.clientX ?? 0) - rect.left;
-          const y = (e.originalEvent?.clientY ?? 0) - rect.top;
-          onMerchantHoverRef.current?.({ merchant, x, y });
-        });
-        marker.on('mouseout', () => onMerchantHoverRef.current?.(null));
-        markersRef.current.push(marker);
-      }
-    });
+        if (props.cluster) {
+          const marker = new mapgl.Marker(map, {
+            coordinates: [clon, clat],
+            icon: clusterIcon(props.point_count),
+            size: [props.point_count < 10 ? 36 : props.point_count < 100 ? 44 : 52,
+                   props.point_count < 10 ? 36 : props.point_count < 100 ? 44 : 52],
+          });
+          marker.on('click', () => {
+            try {
+              const expansionZoom = Math.min(clusterRef.current.getClusterExpansionZoom(props.cluster_id), 18);
+              map.setCenter([clon, clat], { animate: true });
+              map.setZoom(expansionZoom, { animate: true });
+            } catch {}
+          });
+          markersRef.current.push(marker);
+        } else {
+          const merchant = props;
+          const marker = new mapgl.Marker(map, {
+            coordinates: [clon, clat],
+            icon: markerIcon(merchant.LAST_MCC),
+            size: [32, 32],
+          });
+          marker.on('click', () => navigate(`/merchant/${merchant.YANDEX_FIRM_ID}`, { state: { merchant } }));
+          marker.on('mouseover', e => {
+            const rect = containerRef.current?.getBoundingClientRect();
+            if (!rect) return;
+            const x = (e.originalEvent?.clientX ?? 0) - rect.left;
+            const y = (e.originalEvent?.clientY ?? 0) - rect.top;
+            onMerchantHoverRef.current?.({ merchant, x, y });
+          });
+          marker.on('mouseout', () => onMerchantHoverRef.current?.(null));
+          markersRef.current.push(marker);
+        }
+      });
+    } catch (err) {
+      console.error('renderClusters error:', err);
+    }
   };
 
   useEffect(() => {
@@ -113,7 +122,7 @@ export default function Map({ onCenterChange, merchants = [], onMerchantHover, f
         onCenterChange?.(lat, lon);
         renderRef.current();
       });
-    });
+    }).catch(err => console.error('mapgl load error:', err));
 
     return () => {
       markersRef.current.forEach(m => m.destroy());
@@ -126,9 +135,13 @@ export default function Map({ onCenterChange, merchants = [], onMerchantHover, f
   }, []);
 
   useEffect(() => {
-    const sc = new Supercluster({ radius: 60, maxZoom: 16 });
-    sc.load(toFeatures(merchants));
-    clusterRef.current = sc;
+    try {
+      const sc = new Supercluster({ radius: 60, maxZoom: CLUSTER_MAX_ZOOM });
+      sc.load(toFeatures(merchants));
+      clusterRef.current = sc;
+    } catch (err) {
+      console.error('supercluster load error:', err);
+    }
     renderRef.current?.();
   }, [merchants]);
 
