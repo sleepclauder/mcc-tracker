@@ -15,7 +15,7 @@ npm install
 node src/app.js          # run dev server (port 3000)
 node --watch src/app.js  # run with auto-restart
 
-npm test                                        # all 38 tests
+npm test                                        # all tests
 node --test src/routes/auth.test.js             # single test file
 npm run test:coverage                           # with coverage
 ```
@@ -62,7 +62,8 @@ CI/CD (GitHub Actions) triggers automatically on push to `main`: runs both test 
        │
        ▼
 [Node.js/Express — PM2 process "mcc-api"]
-  routes: /auth  /merchants  /votes  /merchants/:id/stats  /admin/*
+  routes: /auth  /merchants  /votes  /merchants/:id/stats
+          /cards  /gis  /admin/*
        │
        ▼
 [Oracle ATP — always-free, 20 GB]
@@ -73,10 +74,13 @@ CI/CD (GitHub Actions) triggers automatically on push to `main`: runs both test 
 ## Key data flow
 
 **Viewing the map:**
-1. `MapPage` calls `useMerchants(lat, lon, 1000)` on every map `moveend`
-2. Hook hits `GET /merchants?lat=&lon=&radius_m=` — bounding-box query against `v_merchant_stats`
-3. Returns rows with `LAST_MCC`, `TOP_MCC_30D`, `VOTES_TOTAL` already aggregated by the view
-4. `Map.jsx` renders 2GIS markers; marker icon/color comes from `markerIcon(mcc)` in `utils/mcc.js`
+1. `MapPage` calls `useNearbyMerchants(lat, lon, 3000)` on every map `moveend`
+2. Hook makes two parallel requests:
+   - `GET /merchants?lat=&lon=&radius_m=` — bounding-box query against `v_merchant_stats`
+   - `GET /gis/nearby?lat=&lon=&radius_m=` — live results from 2GIS Catalog API (requires `GIS_KEY` env var; silently returns `[]` if missing or key invalid)
+3. Results are merged: DB rows take priority; GIS rows added only if `YANDEX_FIRM_ID` not already in DB
+4. `Map.jsx` clusters merchants with **supercluster**: at low zoom shows blue circle with count, at zoom ≥ 14 shows individual colored markers
+5. Marker icon/color comes from `markerIcon(mcc)` in `utils/mcc.js`
 
 **Voting:**
 1. User opens `MerchantPage` → `GET /merchants/:yandex_firm_id/stats`
@@ -89,49 +93,12 @@ CI/CD (GitHub Actions) triggers automatically on push to `main`: runs both test 
 - `filteredMerchants` is computed client-side; passed to both `<Map>` and `<MerchantList>`
 - Filter bar is always visible above the map; chips toggle entries in the Set
 
-## Admin panel
-
-**URL:** `/admin` — доступна только пользователям с `IS_ADMIN = 1` в БД (проверяется на бэкенде middleware'ом, дублируется в JWT).
-
-**API роуты** (все требуют JWT + `is_admin: true`):
-| Method | Path | Описание |
-|--------|------|----------|
-| GET | `/admin/users?q=&offset=` | Список пользователей с поиском по email, пагинация 20/стр |
-| GET | `/admin/users/:id/votes?offset=` | История голосований пользователя |
-| PUT | `/admin/users/:id` | Изменить email / пароль / is_admin / is_blocked |
-| DELETE | `/admin/users/:id` | Удалить аккаунт + все данные (транзакция) |
-
-**Защита:** `requireAuth` → `requireAdmin` в `backend/src/middleware/requireAdmin.js`. Администратор не может изменить/удалить собственный аккаунт.
-
-**Блокировка:** заблокированный пользователь (`IS_BLOCKED = 1`) получает 403 при попытке войти.
-
-**JWT:** поле `is_admin` включается в payload при логине. Фронтенд читает его через `getCurrentUserIsAdmin()` в `utils/auth.js` — показывает/скрывает пункт меню и защищает маршрут `AdminGuard`.
-
-**Как назначить первого администратора** (выполнить на VM):
-```bash
-ssh -i ssh-key/ssh-key-2026-05-10.key ubuntu@147.5.126.225
-cat > /tmp/set_admin.js << 'EOF'
-process.chdir('/var/www/mcc-tracker/app');
-require('dotenv').config({path: 'backend/.env'});
-const db = require('/var/www/mcc-tracker/app/backend/src/db');
-db.init().then(async () => {
-  const r = await db.execute(
-    'UPDATE users SET is_admin = 1 WHERE email = :email',
-    { email: 'your@email.com' }
-  );
-  console.log('rows:', r.rowsAffected);
-  process.exit(0);
-});
-EOF
-NODE_PATH=/var/www/mcc-tracker/app/backend/node_modules node /tmp/set_admin.js
-```
-После этого пользователю нужно перелогиниться (старый JWT не содержит `is_admin`).
-
-**DB-миграция** (уже применена, хранится в `db/migrate_admin.sql`):
-```sql
-ALTER TABLE users ADD is_admin NUMBER(1) DEFAULT 0 NOT NULL;
-ALTER TABLE users ADD is_blocked NUMBER(1) DEFAULT 0 NOT NULL;
-```
+**Admin panel:**
+- Route `/admin` in the app (protected by `AdminGuard` — redirects non-admins)
+- Backend `/admin/*` requires JWT + `is_admin = 1` (`requireAuth` + `requireAdmin` middleware chain)
+- Admin can list/search users, view their votes, edit email/password/is_admin/is_blocked, delete users
+- `is_admin` flag is included in the JWT payload; `getCurrentUserIsAdmin()` in `utils/auth.js` reads it from the token
+- Admin cannot edit or delete their own account (backend enforces this)
 
 ## Important quirks
 
@@ -141,7 +108,11 @@ ALTER TABLE users ADD is_blocked NUMBER(1) DEFAULT 0 NOT NULL;
 
 **Map centering:** last position is persisted in `localStorage` key `mcc_last_center`. On mount, geolocation is only requested if no saved position exists.
 
+**Marker clustering:** `Map.jsx` uses `supercluster` (not 2GIS native — `GeoJsonSource` doesn't support clustering). Clusters rendered as `Marker` with SVG data-URI icon. Do NOT use `HtmlMarker` — may be absent in CDN runtime. Do NOT use `getBounds()` — throws before style loads; compute bbox from `getCenter()` instead. Always trigger first render on `styleload` event, not immediately after `new mapgl.Map()`.
+
 **Marker icons:** SVG data URIs built in `utils/mcc.js → markerIcon()`. Uses emoji in SVG `<text>` with emoji font stack. `MARKER_LETTERS` was removed — don't re-add it.
+
+**GIS_KEY:** env var on VM for 2GIS Catalog API (`/gis/nearby`). If expired or invalid (403), the route returns `[]` — app degrades gracefully to DB-only data. Stored in `backend/.env` on VM (never in git).
 
 **Frontend env vars:**
 - `VITE_API_URL` — backend base URL (without trailing slash, no `/api` suffix)
@@ -152,6 +123,8 @@ ALTER TABLE users ADD is_blocked NUMBER(1) DEFAULT 0 NOT NULL;
 **Backend tests mock the DB:** all `routes/*.test.js` inject a fake `db` object. Tests never hit Oracle. `mccService.test.js` is pure unit — no DB at all.
 
 **node_modules must not be committed.** `.gitignore` covers both `node_modules/` and `frontend/node_modules/`. If they appear tracked, run `git rm -r --cached frontend/node_modules/`.
+
+**OSM seed data:** `db/seed_osm_spb.js` fetches up to 5000 nodes from Overpass API for SPb bounding box (59.75–60.15 lat, 29.50–30.75 lon). Run on VM — needs Oracle wallet. Inserts a seed vote per merchant so MCC shows on map immediately.
 
 ## MCC codes in use
 
