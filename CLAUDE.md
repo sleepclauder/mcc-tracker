@@ -62,11 +62,11 @@ CI/CD (GitHub Actions) triggers automatically on push to `main`: runs both test 
        │
        ▼
 [Node.js/Express — PM2 process "mcc-api"]
-  routes: /auth  /merchants  /votes  /merchants/:id/stats
+  routes: /auth  /merchants  /votes  /merchants/:id/stats  /admin/*
        │
        ▼
 [Oracle ATP — always-free, 20 GB]
-  tables: merchants, mcc_votes, users, mcc_codes
+  tables: merchants, mcc_votes, users, mcc_codes, user_cards, card_cashback_rules
   view:   v_merchant_stats  (aggregates last_mcc, top_mcc_30d)
 ```
 
@@ -88,6 +88,50 @@ CI/CD (GitHub Actions) triggers automatically on push to `main`: runs both test 
 - `MapPage` holds `selectedMccs: Set<string>` (multi-select)
 - `filteredMerchants` is computed client-side; passed to both `<Map>` and `<MerchantList>`
 - Filter bar is always visible above the map; chips toggle entries in the Set
+
+## Admin panel
+
+**URL:** `/admin` — доступна только пользователям с `IS_ADMIN = 1` в БД (проверяется на бэкенде middleware'ом, дублируется в JWT).
+
+**API роуты** (все требуют JWT + `is_admin: true`):
+| Method | Path | Описание |
+|--------|------|----------|
+| GET | `/admin/users?q=&offset=` | Список пользователей с поиском по email, пагинация 20/стр |
+| GET | `/admin/users/:id/votes?offset=` | История голосований пользователя |
+| PUT | `/admin/users/:id` | Изменить email / пароль / is_admin / is_blocked |
+| DELETE | `/admin/users/:id` | Удалить аккаунт + все данные (транзакция) |
+
+**Защита:** `requireAuth` → `requireAdmin` в `backend/src/middleware/requireAdmin.js`. Администратор не может изменить/удалить собственный аккаунт.
+
+**Блокировка:** заблокированный пользователь (`IS_BLOCKED = 1`) получает 403 при попытке войти.
+
+**JWT:** поле `is_admin` включается в payload при логине. Фронтенд читает его через `getCurrentUserIsAdmin()` в `utils/auth.js` — показывает/скрывает пункт меню и защищает маршрут `AdminGuard`.
+
+**Как назначить первого администратора** (выполнить на VM):
+```bash
+ssh -i ssh-key/ssh-key-2026-05-10.key ubuntu@147.5.126.225
+cat > /tmp/set_admin.js << 'EOF'
+process.chdir('/var/www/mcc-tracker/app');
+require('dotenv').config({path: 'backend/.env'});
+const db = require('/var/www/mcc-tracker/app/backend/src/db');
+db.init().then(async () => {
+  const r = await db.execute(
+    'UPDATE users SET is_admin = 1 WHERE email = :email',
+    { email: 'your@email.com' }
+  );
+  console.log('rows:', r.rowsAffected);
+  process.exit(0);
+});
+EOF
+NODE_PATH=/var/www/mcc-tracker/app/backend/node_modules node /tmp/set_admin.js
+```
+После этого пользователю нужно перелогиниться (старый JWT не содержит `is_admin`).
+
+**DB-миграция** (уже применена, хранится в `db/migrate_admin.sql`):
+```sql
+ALTER TABLE users ADD is_admin NUMBER(1) DEFAULT 0 NOT NULL;
+ALTER TABLE users ADD is_blocked NUMBER(1) DEFAULT 0 NOT NULL;
+```
 
 ## Important quirks
 
