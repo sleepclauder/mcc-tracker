@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { MCC_LABELS, MCC_ICONS } from '../utils/mcc';
 import { CITIES, CITY_KEY, CITY_NAME_KEY } from '../utils/cities';
 import { MapPin, List } from '../components/Icons';
-import { getBestCashbackForMcc } from '../utils/bankMcc';
+import { getBestCashbackForMcc, BANK_CATEGORIES } from '../utils/bankMcc';
 import client from '../api/client';
 
 function currentMonth() {
@@ -67,6 +67,8 @@ export default function MapPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [selectedMccs, setSelectedMccs] = useState(new Set());
+  const [selectedBank, setSelectedBank] = useState(null);
+  const [selectedBankCategories, setSelectedBankCategories] = useState(new Set());
 
   const { merchants, loading, error } = useMerchants(center.lat, center.lon, 1000);
   const { authenticated, userEmail, logout } = useAuth();
@@ -118,8 +120,38 @@ export default function MapPage() {
     });
   }
 
+  function toggleBankCategory(catName) {
+    setSelectedBankCategories(prev => {
+      const next = new Set(prev);
+      next.has(catName) ? next.delete(catName) : next.add(catName);
+      return next;
+    });
+  }
+
+  function handleBankChange(e) {
+    setSelectedBank(e.target.value || null);
+    setSelectedBankCategories(new Set());
+  }
+
+  function clearFilters() {
+    setSelectedMccs(new Set());
+    setSelectedBankCategories(new Set());
+  }
+
+  const activeBankMccs = selectedBank && selectedBankCategories.size > 0
+    ? new Set(
+        (BANK_CATEGORIES[selectedBank] || [])
+          .filter(c => selectedBankCategories.has(c.name))
+          .flatMap(c => c.mccs)
+      )
+    : null;
+
   const filteredMerchants = merchants.filter(m => {
-    if (selectedMccs.size > 0 && !selectedMccs.has(m.LAST_MCC)) return false;
+    if (activeBankMccs) {
+      if (!activeBankMccs.has(m.LAST_MCC)) return false;
+    } else if (selectedMccs.size > 0 && !selectedMccs.has(m.LAST_MCC)) {
+      return false;
+    }
     if (query.trim() && !m.NAME?.toLowerCase().includes(query.toLowerCase())) return false;
     return true;
   });
@@ -167,17 +199,39 @@ export default function MapPage() {
       </header>
 
       <div className="filter-bar">
-        {MCC_CATEGORIES.map(({ mcc, label, icon }) => (
-          <button
-            key={mcc}
-            className={`mcc-chip${selectedMccs.has(mcc) ? ' mcc-chip--active' : ''}`}
-            onClick={() => toggleMcc(mcc)}
-          >
-            {icon} {label}
-          </button>
-        ))}
-        {selectedMccs.size > 0 && (
-          <button className="mcc-chip-clear" onClick={() => setSelectedMccs(new Set())}>
+        <select
+          className="bank-filter-select"
+          value={selectedBank || ''}
+          onChange={handleBankChange}
+        >
+          <option value="">Все банки</option>
+          {Object.keys(BANK_CATEGORIES).map(bank => (
+            <option key={bank} value={bank}>{bank}</option>
+          ))}
+        </select>
+        <span className="filter-bar-divider" />
+        {selectedBank
+          ? (BANK_CATEGORIES[selectedBank] || []).map(cat => (
+              <button
+                key={cat.name}
+                className={`mcc-chip${selectedBankCategories.has(cat.name) ? ' mcc-chip--active' : ''}`}
+                onClick={() => toggleBankCategory(cat.name)}
+              >
+                {cat.name}
+              </button>
+            ))
+          : MCC_CATEGORIES.map(({ mcc, label, icon }) => (
+              <button
+                key={mcc}
+                className={`mcc-chip${selectedMccs.has(mcc) ? ' mcc-chip--active' : ''}`}
+                onClick={() => toggleMcc(mcc)}
+              >
+                {icon} {label}
+              </button>
+            ))
+        }
+        {(selectedMccs.size > 0 || selectedBankCategories.size > 0) && (
+          <button className="mcc-chip-clear" onClick={clearFilters}>
             Сбросить
           </button>
         )}

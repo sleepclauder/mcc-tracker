@@ -9,6 +9,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .header-controls { display: flex; align-items: center; gap: 10px; }
 .filter-bar { display: flex; align-items: center; gap: 6px; padding: 8px 16px; background: #fff; border-bottom: 1px solid #e0e0e0; overflow-x: auto; flex-shrink: 0; }
 .filter-bar::-webkit-scrollbar { display: none; }
+.bank-filter-select { padding: 4px 8px; border: 1px solid #e0e0e0; border-radius: 16px; font-size: 12px; background: #fff; color: #555; cursor: pointer; flex-shrink: 0; }
+.bank-filter-select:focus { outline: none; border-color: #e53935; }
+.filter-bar-divider { width: 1px; height: 20px; background: #e0e0e0; flex-shrink: 0; }
 .mcc-chip-clear { padding: 4px 12px; border: 1px dashed #e53935; border-radius: 16px; background: none; font-size: 12px; color: #e53935; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
 .mcc-chip-clear:hover { background: #fff5f5; }
 .map-layout { display: flex; flex: 1; overflow: hidden; }
@@ -84,10 +87,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 .modal-header h3 { margin: 0; }
 .modal-merchant { color: #777; font-size: 14px; margin-bottom: 20px; }
-.mcc-options { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
-.mcc-option { padding: 10px 16px; border: 1px solid #ddd; border-radius: 6px; background: #fff; cursor: pointer; text-align: left; font-size: 14px; display: flex; align-items: center; gap: 10px; }
-.mcc-option small { margin-left: auto; color: #aaa; font-size: 12px; }
-.mcc-option.selected { border-color: #e53935; background: #fff5f5; }
+.mcc-code-input { width: 100%; padding: 10px 14px; border: 1.5px solid #e0e0e0; border-radius: 8px; font-size: 22px; letter-spacing: 6px; text-align: center; outline: none; margin-bottom: 14px; }
+.mcc-code-input:focus { border-color: #e53935; }
+.mcc-coverage { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.mcc-coverage-none { font-size: 12px; color: #aaa; margin-bottom: 14px; }
 .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
 
 /* Buttons */
@@ -203,13 +206,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .bank-picker-item:hover { border-color: #bbb; background: #f0f0f0; }
 .bank-picker-item--active { border-color: #1e88e5; background: #e3f2fd; color: #1565c0; font-weight: 600; }
 
-/* Vote modal — bank coverage row */
-.mcc-option { flex-direction: column; align-items: flex-start; }
-.mcc-option-main { display: flex; align-items: center; gap: 8px; }
-.mcc-option-main small { color: #aaa; font-size: 12px; }
-.mcc-option-banks { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
-.mcc-bank-tag { font-size: 11px; color: #777; background: #f0f0f0; border-radius: 10px; padding: 1px 7px; white-space: nowrap; }
-.mcc-option.selected .mcc-bank-tag { background: #fce4e4; color: #b71c1c; }
+.mcc-bank-tag { font-size: 11px; color: #777; background: #f0f0f0; border-radius: 10px; padding: 2px 8px; white-space: nowrap; }
 
 /* Merchant page — bank coverage */
 .bank-coverage { background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 14px 16px; margin: 0 0 16px; }

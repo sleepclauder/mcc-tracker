@@ -24,21 +24,33 @@ describe('VoteModal', () => {
     expect(screen.getByText('Пятёрочка')).toBeInTheDocument();
   });
 
-  it('renders MCC options', () => {
+  it('renders MCC code input', () => {
     render(<VoteModal merchant={merchant} onClose={vi.fn()} />);
-    expect(screen.getAllByText(/Продукты/).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/Аптека/).length).toBeGreaterThan(0);
+    expect(screen.getByPlaceholderText(/5411/)).toBeInTheDocument();
   });
 
-  it('vote button disabled until MCC selected', () => {
+  it('vote button disabled until 4-digit code entered', () => {
     render(<VoteModal merchant={merchant} onClose={vi.fn()} />);
     expect(screen.getByText('Проголосовать')).toBeDisabled();
   });
 
-  it('selects MCC on click', () => {
+  it('enables vote button after entering 4 digits', () => {
     render(<VoteModal merchant={merchant} onClose={vi.fn()} />);
-    fireEvent.click(screen.getAllByText(/Продукты/)[0]);
+    fireEvent.change(screen.getByPlaceholderText(/5411/), { target: { value: '5411' } });
     expect(screen.getByText('Проголосовать')).not.toBeDisabled();
+  });
+
+  it('keeps vote button disabled with fewer than 4 digits', () => {
+    render(<VoteModal merchant={merchant} onClose={vi.fn()} />);
+    fireEvent.change(screen.getByPlaceholderText(/5411/), { target: { value: '541' } });
+    expect(screen.getByText('Проголосовать')).toBeDisabled();
+  });
+
+  it('strips non-digit characters from input', () => {
+    render(<VoteModal merchant={merchant} onClose={vi.fn()} />);
+    const input = screen.getByPlaceholderText(/5411/);
+    fireEvent.change(input, { target: { value: 'ab54cd11' } });
+    expect(input.value).toBe('5411');
   });
 
   it('calls onClose when cancel clicked', () => {
@@ -54,10 +66,11 @@ describe('VoteModal', () => {
     const onSuccess = vi.fn();
     render(<VoteModal merchant={merchant} onClose={onClose} onSuccess={onSuccess} />);
 
-    fireEvent.click(screen.getAllByText(/Продукты/)[0]);
+    fireEvent.change(screen.getByPlaceholderText(/5411/), { target: { value: '5411' } });
     fireEvent.click(screen.getByText('Проголосовать'));
 
     await waitFor(() => {
+      expect(client.post).toHaveBeenCalledWith('/votes', expect.objectContaining({ mcc_code: '5411' }));
       expect(onSuccess).toHaveBeenCalled();
       expect(onClose).toHaveBeenCalled();
     });
@@ -67,7 +80,7 @@ describe('VoteModal', () => {
     client.post.mockRejectedValue({ response: { data: { error: 'Ошибка сервера' } } });
     render(<VoteModal merchant={merchant} onClose={vi.fn()} />);
 
-    fireEvent.click(screen.getAllByText(/Продукты/)[0]);
+    fireEvent.change(screen.getByPlaceholderText(/5411/), { target: { value: '5412' } });
     fireEvent.click(screen.getByText('Проголосовать'));
 
     await waitFor(() => {
@@ -80,5 +93,12 @@ describe('VoteModal', () => {
     render(<VoteModal merchant={merchant} onClose={onClose} />);
     fireEvent.click(document.querySelector('.modal-overlay'));
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it('shows bank coverage for known MCC', () => {
+    render(<VoteModal merchant={merchant} onClose={vi.fn()} />);
+    fireEvent.change(screen.getByPlaceholderText(/5411/), { target: { value: '5411' } });
+    // 5411 (supermarkets) should appear in at least one bank's coverage
+    expect(document.querySelector('.mcc-coverage')).not.toBeNull();
   });
 });
