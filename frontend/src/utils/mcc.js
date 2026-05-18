@@ -36,9 +36,8 @@ const MARKER_COLORS = {
 
 export function userLocationIcon() {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40">
-    <circle cx="20" cy="20" r="18" fill="#1976d2" stroke="white" stroke-width="3"/>
-    <circle cx="20" cy="13" r="5" fill="white"/>
-    <path d="M10 32 Q10 22 20 22 Q30 22 30 32" fill="white"/>
+    <circle cx="20" cy="20" r="18" fill="#f9a825" stroke="white" stroke-width="3"/>
+    <text x="20" y="27" text-anchor="middle" font-size="20" font-family="Apple Color Emoji,Segoe UI Emoji,Noto Color Emoji,sans-serif">🦆</text>
   </svg>`;
   return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
 }
