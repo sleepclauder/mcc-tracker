@@ -16,14 +16,15 @@ module.exports = function makeGisRouter() {
 
     try {
       const params = new URLSearchParams({
-        point: `${lon},${lat}`,
         radius: String(radius),
         type: 'branch',
         fields: 'items.point,items.address_name',
         page_size: '50',
         key,
       });
-      const r = await fetch(`https://catalog.api.2gis.com/3.0/items?${params}`, {
+      // point must use literal comma — URLSearchParams encodes it as %2C which 2GIS rejects
+      const url = `https://catalog.api.2gis.com/3.0/items?point=${lon},${lat}&${params}`;
+      const r = await fetch(url, {
         signal: AbortSignal.timeout(5000),
       });
       if (!r.ok) return res.json([]);
