@@ -6,15 +6,23 @@ import Map from './Map';
 const mockMap = {
   on: vi.fn(),
   getCenter: vi.fn(() => [37.617, 55.755]),
+  getZoom: vi.fn(() => 18),
+  getBounds: vi.fn(() => ({
+    southWest: [30.30, 59.90],
+    northEast: [30.40, 60.00],
+  })),
   setCenter: vi.fn(),
+  setZoom: vi.fn(),
   destroy: vi.fn(),
 };
 const MockMarker = vi.fn(() => ({ on: vi.fn(), destroy: vi.fn() }));
+const MockHtmlMarker = vi.fn(() => ({ destroy: vi.fn() }));
 
 vi.mock('@2gis/mapgl', () => ({
   load: vi.fn(() => Promise.resolve({
     Map: vi.fn(() => mockMap),
     Marker: MockMarker,
+    HtmlMarker: MockHtmlMarker,
   })),
 }));
 
@@ -37,6 +45,7 @@ describe('Map', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     MockMarker.mockImplementation(() => ({ on: vi.fn(), destroy: vi.fn() }));
+    MockHtmlMarker.mockImplementation(() => ({ destroy: vi.fn() }));
   });
 
   it('renders container div', () => {
@@ -64,7 +73,8 @@ describe('Map', () => {
     expect(onCenterChange).toHaveBeenCalledWith(55.755, 37.617);
   });
 
-  it('creates markers for each merchant', async () => {
+  it('creates markers for merchants at high zoom', async () => {
+    mockMap.getZoom.mockReturnValue(18);
     renderMap({ merchants });
     await vi.waitFor(() => expect(MockMarker).toHaveBeenCalledTimes(2));
   });
