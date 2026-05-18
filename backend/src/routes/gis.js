@@ -19,7 +19,7 @@ module.exports = function makeGisRouter() {
         radius: String(radius),
         type: 'branch',
         fields: 'items.point,items.address_name',
-        page_size: '50',
+        page_size: '10',
         key,
       });
       // point must use literal comma — URLSearchParams encodes it as %2C which 2GIS rejects
@@ -29,6 +29,7 @@ module.exports = function makeGisRouter() {
       });
       if (!r.ok) return res.json([]);
       const data = await r.json();
+      if (data.meta?.code !== 200) return res.json([]);
       const items = data.result?.items ?? [];
       res.json(
         items
