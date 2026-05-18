@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import client from '../api/client';
 import { MCC_LABELS, MCC_ICONS } from '../utils/mcc';
 import { CITIES, CITY_KEY, CITY_NAME_KEY } from '../utils/cities';
+import { BANK_PRESETS, getBankCategoryForMcc } from '../utils/bankMcc';
 import { useAuth } from '../hooks/useAuth';
 
 const BANK_META = {
@@ -135,6 +136,16 @@ export default function ProfilePage() {
       .catch(() => {});
   }
 
+  function loadPreset(card) {
+    const preset = BANK_PRESETS[card.bank_name];
+    if (!preset) return;
+    const used = (rules[card.id] || []).map(r => r.mcc_code);
+    const toAdd = preset.filter(p => !used.includes(p.mcc_code));
+    if (!toAdd.length) return;
+    setRules(prev => ({ ...prev, [card.id]: [...(prev[card.id] || []), ...toAdd] }));
+    setDirty(prev => ({ ...prev, [card.id]: true }));
+  }
+
   function addRule(cardId) {
     const used = (rules[cardId] || []).map(r => r.mcc_code);
     const next = MCC_OPTIONS.find(o => !used.includes(o.code));
@@ -233,11 +244,20 @@ export default function ProfilePage() {
                 <span className="profile-card-bank">{card.bank_name}</span>
                 {card.card_name && <span className="profile-card-name">{card.card_name}</span>}
               </div>
-              <button
-                className="btn-danger-sm"
-                onClick={() => removeCard(card.id)}
-                title="Удалить карту"
-              >✕</button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                {BANK_PRESETS[card.bank_name] && (
+                  <button
+                    className="btn-preset"
+                    onClick={() => loadPreset(card)}
+                    title="Загрузить стандартные категории банка"
+                  >Пресет</button>
+                )}
+                <button
+                  className="btn-danger-sm"
+                  onClick={() => removeCard(card.id)}
+                  title="Удалить карту"
+                >✕</button>
+              </div>
             </div>
 
             <div className="profile-rules">
@@ -248,40 +268,48 @@ export default function ProfilePage() {
                 const usedCodes = (rules[card.id] || [])
                   .filter((_, i) => i !== idx)
                   .map(r => r.mcc_code);
+                const bankCat = getBankCategoryForMcc(card.bank_name, rule.mcc_code);
                 return (
-                  <div key={idx} className="profile-rule-row">
-                    <select
-                      className="profile-rule-mcc"
-                      value={rule.mcc_code}
-                      onChange={e => updateRule(card.id, idx, 'mcc_code', e.target.value)}
-                    >
-                      {MCC_OPTIONS.map(o => (
-                        <option
-                          key={o.code}
-                          value={o.code}
-                          disabled={usedCodes.includes(o.code)}
-                        >
-                          {MCC_ICONS[o.code]} {o.label}
-                        </option>
-                      ))}
-                    </select>
-                    <div className="profile-rule-pct-wrap">
-                      <input
-                        className="profile-rule-pct"
-                        type="number"
-                        min="0.1"
-                        max="100"
-                        step="0.5"
-                        value={rule.cashback_pct}
-                        onChange={e => updateRule(card.id, idx, 'cashback_pct', e.target.value)}
-                      />
-                      <span className="profile-rule-pct-sign">%</span>
+                  <div key={idx} className="profile-rule-wrap">
+                    <div className="profile-rule-row">
+                      <select
+                        className="profile-rule-mcc"
+                        value={rule.mcc_code}
+                        onChange={e => updateRule(card.id, idx, 'mcc_code', e.target.value)}
+                      >
+                        {MCC_OPTIONS.map(o => (
+                          <option
+                            key={o.code}
+                            value={o.code}
+                            disabled={usedCodes.includes(o.code)}
+                          >
+                            {MCC_ICONS[o.code]} {o.label}
+                          </option>
+                        ))}
+                      </select>
+                      <div className="profile-rule-pct-wrap">
+                        <input
+                          className="profile-rule-pct"
+                          type="number"
+                          min="0.1"
+                          max="100"
+                          step="0.5"
+                          value={rule.cashback_pct}
+                          onChange={e => updateRule(card.id, idx, 'cashback_pct', e.target.value)}
+                        />
+                        <span className="profile-rule-pct-sign">%</span>
+                      </div>
+                      <button
+                        className="btn-danger-sm"
+                        onClick={() => removeRule(card.id, idx)}
+                        title="Удалить категорию"
+                      >✕</button>
                     </div>
-                    <button
-                      className="btn-danger-sm"
-                      onClick={() => removeRule(card.id, idx)}
-                      title="Удалить категорию"
-                    >✕</button>
+                    {bankCat && (
+                      <div className="profile-rule-hint">
+                        {card.bank_name}: «{bankCat.name}» — MCC {bankCat.mccs.join(', ')}
+                      </div>
+                    )}
                   </div>
                 );
               })}

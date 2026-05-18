@@ -6,6 +6,7 @@ import Toast from '../components/Toast';
 import { ArrowLeft } from '../components/Icons';
 import { isAuthenticated } from '../utils/auth';
 import { mccLabel, MCC_ICONS } from '../utils/mcc';
+import { getMccBankCoverage } from '../utils/bankMcc';
 
 function GisReviewsLink({ gisUrl }) {
   if (!gisUrl) return null;
@@ -18,6 +19,25 @@ function GisReviewsLink({ gisUrl }) {
     >
       ★ Отзывы в 2GIS
     </a>
+  );
+}
+
+function BankCoverage({ mcc }) {
+  if (!mcc) return null;
+  const coverage = getMccBankCoverage(mcc);
+  if (!coverage.length) return null;
+  return (
+    <div className="bank-coverage">
+      <p className="bank-coverage-title">Кешбэк у банков для MCC {mcc}</p>
+      <div className="bank-coverage-list">
+        {coverage.map(({ bank, category }) => (
+          <div key={bank} className="bank-coverage-row">
+            <span className="bank-coverage-name">{bank}</span>
+            <span className="bank-coverage-cat">{category}</span>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -89,6 +109,8 @@ export default function MerchantPage() {
           <span className="stat-value">{stats.VOTES_30D}</span>
         </div>
       </div>
+
+      <BankCoverage mcc={stats.TOP_MCC_30D || stats.LAST_MCC} />
 
       <div className="merchant-actions">
         {isAuthenticated()
