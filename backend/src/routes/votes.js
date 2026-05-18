@@ -39,6 +39,16 @@ module.exports = function makeVotesRouter(db) {
       );
       const merchant_id = merchant.rows[0].ID;
 
+      const recentVote = await db.execute(
+        `SELECT COUNT(*) AS cnt FROM mcc_votes
+         WHERE user_id = :userId AND merchant_id = :merchantId
+           AND created_at > SYSDATE - 1`,
+        { userId: req.user.id, merchantId: merchant_id }
+      );
+      if (recentVote.rows[0].CNT > 0) {
+        return res.status(429).json({ error: 'already voted today for this merchant' });
+      }
+
       await db.execute(
         `INSERT INTO mcc_votes (merchant_id, user_id, mcc_code, purchase_date)
          VALUES (:merchant_id, :user_id, :mcc_code, :purchase_date)`,

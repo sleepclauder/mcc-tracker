@@ -16,12 +16,13 @@ function makeApp(mockDb) {
   return app;
 }
 
-function mockDb(mccExists = true) {
+function mockDb(mccExists = true, alreadyVoted = false) {
   return {
     execute: async (sql) => {
       if (sql.includes('mcc_codes'))    return { rows: mccExists ? [{ MCC_CODE: '5411' }] : [] };
       if (sql.includes('MERGE'))        return { rowsAffected: 1 };
       if (sql.includes('SELECT id FROM merchants')) return { rows: [{ ID: 99 }] };
+      if (sql.includes('mcc_votes') && sql.includes('SYSDATE')) return { rows: [{ CNT: alreadyVoted ? 1 : 0 }] };
       if (sql.includes('INSERT INTO mcc_votes'))    return { rowsAffected: 1 };
       return { rows: [] };
     },
@@ -66,6 +67,14 @@ test('POST /votes - unknown mcc_code returns 400', async () => {
     .set('Authorization', `Bearer ${TOKEN}`)
     .send({ yandex_firm_id: 'firm1', mcc_code: '9999' });
   assert.equal(res.status, 400);
+});
+
+test('POST /votes - already voted today returns 429', async () => {
+  const res = await request(makeApp(mockDb(true, true)))
+    .post('/votes')
+    .set('Authorization', `Bearer ${TOKEN}`)
+    .send({ yandex_firm_id: 'firm1', mcc_code: '5411' });
+  assert.equal(res.status, 429);
 });
 
 test('POST /votes - with purchase_date', async () => {
