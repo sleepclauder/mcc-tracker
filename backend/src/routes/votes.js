@@ -42,7 +42,7 @@ module.exports = function makeVotesRouter(db) {
       const recentVote = await db.execute(
         `SELECT COUNT(*) AS cnt FROM mcc_votes
          WHERE user_id = :userId AND merchant_id = :merchantId
-           AND created_at > SYSDATE - 1`,
+           AND voted_at > SYSDATE - 1`,
         { userId: req.user.id, merchantId: merchant_id }
       );
       if (recentVote.rows[0].CNT > 0) {
