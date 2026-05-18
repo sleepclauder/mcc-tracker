@@ -84,3 +84,24 @@ test('POST /votes - with purchase_date', async () => {
     .send({ yandex_firm_id: 'firm1', mcc_code: '5411', purchase_date: '2026-05-10' });
   assert.equal(res.status, 201);
 });
+
+test('POST /votes - duplicate-vote check uses voted_at not created_at', async () => {
+  let capturedSql = null;
+  const db = {
+    execute: async (sql) => {
+      if (sql.includes('mcc_codes'))               return { rows: [{ MCC_CODE: '5411' }] };
+      if (sql.includes('MERGE'))                   return { rowsAffected: 1 };
+      if (sql.includes('SELECT id FROM merchants')) return { rows: [{ ID: 99 }] };
+      if (sql.includes('SYSDATE')) { capturedSql = sql; return { rows: [{ CNT: 0 }] }; }
+      if (sql.includes('INSERT INTO mcc_votes'))   return { rowsAffected: 1 };
+      return { rows: [] };
+    },
+  };
+  await request(makeApp(db))
+    .post('/votes')
+    .set('Authorization', `Bearer ${TOKEN}`)
+    .send({ yandex_firm_id: 'firm1', mcc_code: '5411' });
+  assert.ok(capturedSql, 'duplicate-vote query was not executed');
+  assert.ok(capturedSql.includes('voted_at'), 'query must use voted_at column');
+  assert.ok(!capturedSql.includes('created_at'), 'query must not use created_at (ORA-00904)');
+});
