@@ -50,6 +50,7 @@ export default function Map({ onCenterChange, merchants = [], onMerchantHover, f
     markersRef.current = [];
 
     const bounds = map.getBounds();
+    if (!bounds) return;
     const zoom = Math.floor(map.getZoom());
     const bbox = [bounds.southWest[0], bounds.southWest[1], bounds.northEast[0], bounds.northEast[1]];
     const clusters = clusterRef.current.getClusters(bbox, zoom);
@@ -105,8 +106,8 @@ export default function Map({ onCenterChange, merchants = [], onMerchantHover, f
 
       const [initLon, initLat] = map.getCenter();
       onCenterChange?.(initLat, initLon);
-      renderRef.current();
 
+      map.on('styleload', () => renderRef.current());
       map.on('moveend', () => {
         const [lon, lat] = map.getCenter();
         onCenterChange?.(lat, lon);

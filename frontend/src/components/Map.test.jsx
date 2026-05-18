@@ -76,6 +76,9 @@ describe('Map', () => {
   it('creates markers for merchants at high zoom', async () => {
     mockMap.getZoom.mockReturnValue(18);
     renderMap({ merchants });
+    await vi.waitFor(() => expect(mockMap.on).toHaveBeenCalled());
+    const styleloadHandler = mockMap.on.mock.calls.find(([e]) => e === 'styleload')?.[1];
+    styleloadHandler?.();
     await vi.waitFor(() => expect(MockMarker).toHaveBeenCalledTimes(2));
   });
 
