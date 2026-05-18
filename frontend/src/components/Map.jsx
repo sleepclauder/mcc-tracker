@@ -21,8 +21,7 @@ export default function Map({ onCenterChange, merchants = [], onMerchantHover, f
       const marker = new mapgl.Marker(map, {
         coordinates: [merchant.LON, merchant.LAT],
         icon: markerIcon(merchant.LAST_MCC),
-        iconWidth: 32,
-        iconHeight: 32,
+        size: [32, 32],
       });
       marker.on('click', () => navigate(`/merchant/${merchant.YANDEX_FIRM_ID}`, { state: { merchant } }));
       marker.on('mouseover', (e) => {
