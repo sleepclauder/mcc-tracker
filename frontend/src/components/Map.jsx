@@ -44,6 +44,8 @@ export default function Map({ onCenterChange, merchants = [], onMerchantHover, f
         key: import.meta.env.VITE_2GIS_KEY,
       });
       mapInstanceRef.current = { map, mapgl };
+      const [initLon, initLat] = map.getCenter();
+      onCenterChange?.(initLat, initLon);
       map.on('moveend', () => {
         const [lon, lat] = map.getCenter();
         onCenterChange?.(lat, lon);
