@@ -62,6 +62,7 @@ module.exports = function makeVotesRouter(db) {
 
       res.status(201).json({ ok: true });
     } catch (e) {
+      console.error('[votes POST]', e);
       res.status(500).json({ error: 'server error' });
     }
   });
