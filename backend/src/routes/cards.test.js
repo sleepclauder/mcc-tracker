@@ -18,7 +18,7 @@ function makeApp(db) {
 }
 
 const CARD_ROW = { ID: 1, BANK_NAME: 'Т-Банк', CARD_NAME: 'Черная' };
-const RULE_ROW = { ID: 10, MCC_CODE: '5411', CASHBACK_PCT: 10 };
+const RULE_ROW = { ID: 10, CATEGORY_NAME: 'Супермаркеты', CASHBACK_PCT: 10 };
 
 function mockDb(overrides = {}) {
   return {
@@ -29,10 +29,10 @@ function mockDb(overrides = {}) {
       if (sql.includes('DELETE FROM user_cards'))
         return { rowsAffected: overrides.deleteCard ?? 1 };
       if (sql.includes('card_cashback_rules') && sql.includes('JOIN user_cards'))
-        return { rows: overrides.bestRules ?? [{ MCC_CODE: '5411', CASHBACK_PCT: 10, BANK_NAME: 'Т-Банк' }] };
+        return { rows: overrides.bestRules ?? [{ CATEGORY_NAME: 'Супермаркеты', CASHBACK_PCT: 10, BANK_NAME: 'Т-Банк' }] };
       if (sql.includes('SELECT id FROM user_cards'))
         return { rows: overrides.cardOwner ?? [{ ID: 1 }] };
-      if (sql.includes('SELECT id, mcc_code'))
+      if (sql.includes('SELECT id, category_name'))
         return { rows: overrides.rules ?? [RULE_ROW] };
       if (sql.includes('DELETE FROM card_cashback_rules'))
         return { rowsAffected: 1 };
@@ -92,25 +92,26 @@ test('DELETE /cards/:id not found returns 404', async () => {
 });
 
 // GET /cards/best
-test('GET /cards/best returns best cashback map', async () => {
+test('GET /cards/best returns rules array', async () => {
   const res = await request(makeApp(mockDb()))
     .get('/cards/best?month=2026-05')
     .set('Authorization', `Bearer ${TOKEN}`);
   assert.equal(res.status, 200);
-  assert.equal(res.body['5411'].pct, 10);
-  assert.equal(res.body['5411'].bank, 'Т-Банк');
+  assert.ok(Array.isArray(res.body));
+  assert.equal(res.body[0].category_name, 'Супермаркеты');
+  assert.equal(res.body[0].cashback_pct, 10);
+  assert.equal(res.body[0].bank_name, 'Т-Банк');
 });
 
-test('GET /cards/best picks highest pct when multiple banks', async () => {
+test('GET /cards/best returns all rules (frontend aggregates)', async () => {
   const db = mockDb({ bestRules: [
-    { MCC_CODE: '5411', CASHBACK_PCT: 5, BANK_NAME: 'Сбер' },
-    { MCC_CODE: '5411', CASHBACK_PCT: 10, BANK_NAME: 'Т-Банк' },
+    { CATEGORY_NAME: 'Рестораны', CASHBACK_PCT: 5, BANK_NAME: 'Сбер' },
+    { CATEGORY_NAME: 'Рестораны', CASHBACK_PCT: 10, BANK_NAME: 'Т-Банк' },
   ] });
   const res = await request(makeApp(db))
     .get('/cards/best?month=2026-05')
     .set('Authorization', `Bearer ${TOKEN}`);
-  assert.equal(res.body['5411'].pct, 10);
-  assert.equal(res.body['5411'].bank, 'Т-Банк');
+  assert.equal(res.body.length, 2);
 });
 
 test('GET /cards/best invalid month returns 400', async () => {
@@ -126,7 +127,7 @@ test('GET /cards/:id/rules returns rules', async () => {
     .get('/cards/1/rules?month=2026-05')
     .set('Authorization', `Bearer ${TOKEN}`);
   assert.equal(res.status, 200);
-  assert.equal(res.body[0].mcc_code, '5411');
+  assert.equal(res.body[0].category_name, 'Супермаркеты');
   assert.equal(res.body[0].cashback_pct, 10);
 });
 
@@ -149,7 +150,7 @@ test('PUT /cards/:id/rules saves rules', async () => {
   const res = await request(makeApp(mockDb()))
     .put('/cards/1/rules')
     .set('Authorization', `Bearer ${TOKEN}`)
-    .send({ month: '2026-05', rules: [{ mcc_code: '5411', cashback_pct: 10 }] });
+    .send({ month: '2026-05', rules: [{ category_name: 'Супермаркеты', cashback_pct: 10 }] });
   assert.equal(res.status, 200);
   assert.ok(res.body.ok);
 });
@@ -158,15 +159,23 @@ test('PUT /cards/:id/rules invalid pct returns 400', async () => {
   const res = await request(makeApp(mockDb()))
     .put('/cards/1/rules')
     .set('Authorization', `Bearer ${TOKEN}`)
-    .send({ month: '2026-05', rules: [{ mcc_code: '5411', cashback_pct: 150 }] });
+    .send({ month: '2026-05', rules: [{ category_name: 'Супермаркеты', cashback_pct: 150 }] });
   assert.equal(res.status, 400);
 });
 
-test('PUT /cards/:id/rules invalid mcc returns 400', async () => {
+test('PUT /cards/:id/rules empty category_name returns 400', async () => {
   const res = await request(makeApp(mockDb()))
     .put('/cards/1/rules')
     .set('Authorization', `Bearer ${TOKEN}`)
-    .send({ month: '2026-05', rules: [{ mcc_code: 'ABCD', cashback_pct: 10 }] });
+    .send({ month: '2026-05', rules: [{ category_name: '', cashback_pct: 10 }] });
+  assert.equal(res.status, 400);
+});
+
+test('PUT /cards/:id/rules missing category_name returns 400', async () => {
+  const res = await request(makeApp(mockDb()))
+    .put('/cards/1/rules')
+    .set('Authorization', `Bearer ${TOKEN}`)
+    .send({ month: '2026-05', rules: [{ cashback_pct: 10 }] });
   assert.equal(res.status, 400);
 });
 

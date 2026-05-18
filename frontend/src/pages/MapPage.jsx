@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { MCC_LABELS, MCC_ICONS } from '../utils/mcc';
 import { CITIES, CITY_KEY, CITY_NAME_KEY } from '../utils/cities';
 import { MapPin, List } from '../components/Icons';
+import { getBestCashbackForMcc } from '../utils/bankMcc';
 import client from '../api/client';
 
 function currentMonth() {
@@ -70,7 +71,7 @@ export default function MapPage() {
   const { merchants, loading, error } = useMerchants(center.lat, center.lon, 1000);
   const { authenticated, userEmail, logout } = useAuth();
   const navigate = useNavigate();
-  const [bestCashback, setBestCashback] = useState({});
+  const [bestCashback, setBestCashback] = useState([]); // [{category_name, cashback_pct, bank_name}]
 
   useEffect(() => {
     if (!authenticated) { setBestCashback({}); return; }
@@ -222,11 +223,9 @@ export default function MapPage() {
               {hm.VOTES_TOTAL > 0 && (
                 <span>{hm.VOTES_TOTAL} голос(ов)</span>
               )}
-              {hm.LAST_MCC && bestCashback[hm.LAST_MCC] && (
-                <span className="map-tooltip-cashback">
-                  💳 {bestCashback[hm.LAST_MCC].bank} {bestCashback[hm.LAST_MCC].pct}%
-                </span>
-              )}
+              {hm.LAST_MCC && (() => { const b = getBestCashbackForMcc(hm.LAST_MCC, bestCashback); return b ? (
+                <span className="map-tooltip-cashback">💳 {b.bank} {b.pct}%</span>
+              ) : null; })()}
             </div>
           )}
         </div>

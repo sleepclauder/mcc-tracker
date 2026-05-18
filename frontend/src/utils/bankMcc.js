@@ -267,84 +267,77 @@ export const BANK_CATEGORIES = {
   // 'Росбанк': [],
 };
 
-// Default preset rules per bank — suggested categories with 5% as a starting point.
-// User adjusts % to match their actual card terms.
+// Default preset rules per bank — suggested categories with starting cashback %.
+// Uses category_name (matches BANK_CATEGORIES keys). User adjusts % to actual card terms.
 export const BANK_PRESETS = {
   'Т-Банк': [
-    { mcc_code: '5812', cashback_pct: 5 },
-    { mcc_code: '5814', cashback_pct: 5 },
-    { mcc_code: '5411', cashback_pct: 5 },
-    { mcc_code: '5912', cashback_pct: 5 },
-    { mcc_code: '5541', cashback_pct: 5 },
+    { category_name: 'Рестораны',    cashback_pct: 5 },
+    { category_name: 'Фастфуд',      cashback_pct: 5 },
+    { category_name: 'Супермаркеты', cashback_pct: 5 },
+    { category_name: 'Аптеки',       cashback_pct: 5 },
+    { category_name: 'Заправки',     cashback_pct: 5 },
   ],
   'Сбер': [
-    { mcc_code: '5812', cashback_pct: 5 },
-    { mcc_code: '5814', cashback_pct: 5 },
-    { mcc_code: '5411', cashback_pct: 5 },
-    { mcc_code: '5912', cashback_pct: 5 },
-    { mcc_code: '5541', cashback_pct: 5 },
+    { category_name: 'Кафе и рестораны', cashback_pct: 5 },
+    { category_name: 'Супермаркеты',     cashback_pct: 5 },
+    { category_name: 'Аптеки',           cashback_pct: 5 },
+    { category_name: 'АЗС',             cashback_pct: 5 },
   ],
   'Альфа-Банк': [
-    { mcc_code: '5812', cashback_pct: 5 },
-    { mcc_code: '5814', cashback_pct: 5 },
-    { mcc_code: '5411', cashback_pct: 5 },
-    { mcc_code: '5912', cashback_pct: 5 },
-    { mcc_code: '5541', cashback_pct: 5 },
+    { category_name: 'Кафе и рестораны', cashback_pct: 5 },
+    { category_name: 'Фастфуд',          cashback_pct: 5 },
+    { category_name: 'Продукты',         cashback_pct: 5 },
+    { category_name: 'Аптеки',           cashback_pct: 5 },
+    { category_name: 'АЗС',             cashback_pct: 5 },
   ],
   'ВТБ': [
-    { mcc_code: '5812', cashback_pct: 5 },
-    { mcc_code: '5814', cashback_pct: 5 },
-    { mcc_code: '5411', cashback_pct: 5 },
-    { mcc_code: '5912', cashback_pct: 5 },
-    { mcc_code: '5541', cashback_pct: 5 },
+    { category_name: 'Кафе и рестораны', cashback_pct: 5 },
+    { category_name: 'Супермаркеты',     cashback_pct: 5 },
+    { category_name: 'Аптеки',           cashback_pct: 5 },
+    { category_name: 'АЗС',             cashback_pct: 5 },
   ],
   'Озон Банк': [
-    { mcc_code: '5812', cashback_pct: 5 },
-    { mcc_code: '5814', cashback_pct: 5 },
-    { mcc_code: '5411', cashback_pct: 5 },
-    { mcc_code: '5912', cashback_pct: 5 },
-    { mcc_code: '5541', cashback_pct: 5 },
+    { category_name: 'Рестораны',    cashback_pct: 5 },
+    { category_name: 'Фастфуд',      cashback_pct: 5 },
+    { category_name: 'Супермаркеты', cashback_pct: 5 },
+    { category_name: 'Аптеки',       cashback_pct: 5 },
+    { category_name: 'Топливо и АЗС', cashback_pct: 5 },
   ],
   'Яндекс Банк': [
-    { mcc_code: '5812', cashback_pct: 5 },
-    { mcc_code: '5814', cashback_pct: 5 },
-    { mcc_code: '5411', cashback_pct: 5 },
-    { mcc_code: '5912', cashback_pct: 5 },
-    { mcc_code: '4121', cashback_pct: 5 },
+    { category_name: 'Кафе, рестораны и бары', cashback_pct: 5 },
+    { category_name: 'Супермаркеты',            cashback_pct: 5 },
+    { category_name: 'Аптеки',                  cashback_pct: 5 },
+    { category_name: 'Городской транспорт',      cashback_pct: 5 },
   ],
   'Газпромбанк': [
-    { mcc_code: '5812', cashback_pct: 2 },
-    { mcc_code: '5814', cashback_pct: 2 },
-    { mcc_code: '5411', cashback_pct: 2 },
-    { mcc_code: '5912', cashback_pct: 2 },
-    { mcc_code: '4121', cashback_pct: 2 },
+    { category_name: 'Кафе, рестораны, фастфуд', cashback_pct: 2 },
+    { category_name: 'Супермаркеты',              cashback_pct: 2 },
+    { category_name: 'Аптеки',                    cashback_pct: 2 },
+    { category_name: 'Такси и транспорт',         cashback_pct: 2 },
   ],
   'Газпромбанк (Умный)': [
-    { mcc_code: '5541', cashback_pct: 3 },
-    { mcc_code: '5912', cashback_pct: 3 },
-    { mcc_code: '5812', cashback_pct: 3 },
-    { mcc_code: '4121', cashback_pct: 3 },
+    { category_name: 'АЗС',               cashback_pct: 3 },
+    { category_name: 'Аптеки',            cashback_pct: 3 },
+    { category_name: 'Одежда и обувь',    cashback_pct: 3 },
+    { category_name: 'Такси и транспорт', cashback_pct: 3 },
   ],
   'ПСБ': [
-    { mcc_code: '5812', cashback_pct: 2 },
-    { mcc_code: '5814', cashback_pct: 2 },
-    { mcc_code: '5912', cashback_pct: 5 },
-    { mcc_code: '5541', cashback_pct: 2 },
-    { mcc_code: '4121', cashback_pct: 10 },
+    { category_name: 'Кафе, рестораны и хобби', cashback_pct: 2 },
+    { category_name: 'Такси и каршеринг',        cashback_pct: 10 },
+    { category_name: 'Аптеки и медцентры',       cashback_pct: 5 },
+    { category_name: 'АЗС, парковки, платные дороги', cashback_pct: 2 },
   ],
   'МТС Банк': [
-    { mcc_code: '5812', cashback_pct: 5 },
-    { mcc_code: '5814', cashback_pct: 3 },
-    { mcc_code: '7832', cashback_pct: 5 },
-    { mcc_code: '4121', cashback_pct: 5 },
-    { mcc_code: '7922', cashback_pct: 5 },
+    { category_name: 'Кафе и рестораны', cashback_pct: 5 },
+    { category_name: 'Фастфуд',          cashback_pct: 3 },
+    { category_name: 'Кино',             cashback_pct: 5 },
+    { category_name: 'Такси и каршеринг', cashback_pct: 5 },
   ],
   'Россельхозбанк': [
-    { mcc_code: '5912', cashback_pct: 5 },
-    { mcc_code: '5541', cashback_pct: 3 },
-    { mcc_code: '5812', cashback_pct: 3 },
-    { mcc_code: '4121', cashback_pct: 3 },
-    { mcc_code: '5722', cashback_pct: 5 },
+    { category_name: 'Аптека',                  cashback_pct: 5 },
+    { category_name: 'АЗС',                     cashback_pct: 3 },
+    { category_name: 'Рестораны',               cashback_pct: 3 },
+    { category_name: 'Техника и электроника',   cashback_pct: 5 },
   ],
 };
 
@@ -376,4 +369,20 @@ export function getBankCategoryForMcc(bankName, mccCode) {
   const cats = BANK_CATEGORIES[bankName];
   if (!cats) return null;
   return cats.find(c => c.mccs.includes(mccCode)) ?? null;
+}
+
+// Given a merchant MCC and the user's rules array [{category_name, cashback_pct, bank_name}],
+// returns the best cashback {pct, bank} or null.
+export function getBestCashbackForMcc(mccCode, rules) {
+  let best = null;
+  for (const rule of rules) {
+    const cats = BANK_CATEGORIES[rule.bank_name] || [];
+    const cat = cats.find(c => c.mccs.includes(mccCode));
+    if (cat && cat.name === rule.category_name) {
+      if (!best || rule.cashback_pct > best.pct) {
+        best = { pct: rule.cashback_pct, bank: rule.bank_name };
+      }
+    }
+  }
+  return best;
 }

@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import client from '../api/client';
-import { MCC_LABELS, MCC_ICONS } from '../utils/mcc';
 import { CITIES, CITY_KEY, CITY_NAME_KEY } from '../utils/cities';
-import { BANK_PRESETS, getBankCategoryForMcc, BANK_SPECIAL_FEATURES } from '../utils/bankMcc';
+import { BANK_CATEGORIES, BANK_PRESETS, BANK_SPECIAL_FEATURES } from '../utils/bankMcc';
 
 const SPECIALS_LS_KEY = 'cb_specials_v1';
 
@@ -76,8 +75,6 @@ function BankBadge({ name, size = 24 }) {
   );
 }
 
-const MCC_OPTIONS = Object.entries(MCC_LABELS).map(([code, label]) => ({ code, label }));
-
 function currentMonth() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
@@ -149,20 +146,21 @@ export default function ProfilePage() {
   function loadPreset(card) {
     const preset = BANK_PRESETS[card.bank_name];
     if (!preset) return;
-    const used = (rules[card.id] || []).map(r => r.mcc_code);
-    const toAdd = preset.filter(p => !used.includes(p.mcc_code));
+    const used = (rules[card.id] || []).map(r => r.category_name);
+    const toAdd = preset.filter(p => !used.includes(p.category_name));
     if (!toAdd.length) return;
     setRules(prev => ({ ...prev, [card.id]: [...(prev[card.id] || []), ...toAdd] }));
     setDirty(prev => ({ ...prev, [card.id]: true }));
   }
 
-  function addRule(cardId) {
-    const used = (rules[cardId] || []).map(r => r.mcc_code);
-    const next = MCC_OPTIONS.find(o => !used.includes(o.code));
+  function addRule(cardId, bankName) {
+    const cats = BANK_CATEGORIES[bankName] || [];
+    const used = (rules[cardId] || []).map(r => r.category_name);
+    const next = cats.find(c => !used.includes(c.name));
     if (!next) return;
     setRules(prev => ({
       ...prev,
-      [cardId]: [...(prev[cardId] || []), { mcc_code: next.code, cashback_pct: 1 }],
+      [cardId]: [...(prev[cardId] || []), { category_name: next.name, cashback_pct: 1 }],
     }));
     setDirty(prev => ({ ...prev, [cardId]: true }));
   }
@@ -210,7 +208,7 @@ export default function ProfilePage() {
       await client.put(`/cards/${cardId}/rules`, {
         month,
         rules: (rules[cardId] || []).map(r => ({
-          mcc_code: r.mcc_code,
+          category_name: r.category_name,
           cashback_pct: Number(r.cashback_pct),
         })),
       });
@@ -295,25 +293,26 @@ export default function ProfilePage() {
                 <p className="profile-rules-empty">Нет категорий для этого месяца</p>
               )}
               {(rules[card.id] || []).map((rule, idx) => {
-                const usedCodes = (rules[card.id] || [])
+                const bankCats = BANK_CATEGORIES[card.bank_name] || [];
+                const usedNames = (rules[card.id] || [])
                   .filter((_, i) => i !== idx)
-                  .map(r => r.mcc_code);
-                const bankCat = getBankCategoryForMcc(card.bank_name, rule.mcc_code);
+                  .map(r => r.category_name);
+                const catInfo = bankCats.find(c => c.name === rule.category_name);
                 return (
                   <div key={idx} className="profile-rule-wrap">
                     <div className="profile-rule-row">
                       <select
                         className="profile-rule-mcc"
-                        value={rule.mcc_code}
-                        onChange={e => updateRule(card.id, idx, 'mcc_code', e.target.value)}
+                        value={rule.category_name}
+                        onChange={e => updateRule(card.id, idx, 'category_name', e.target.value)}
                       >
-                        {MCC_OPTIONS.map(o => (
+                        {bankCats.map(c => (
                           <option
-                            key={o.code}
-                            value={o.code}
-                            disabled={usedCodes.includes(o.code)}
+                            key={c.name}
+                            value={c.name}
+                            disabled={usedNames.includes(c.name)}
                           >
-                            {MCC_ICONS[o.code]} {o.label}
+                            {c.name}
                           </option>
                         ))}
                       </select>
@@ -335,9 +334,9 @@ export default function ProfilePage() {
                         title="Удалить категорию"
                       >✕</button>
                     </div>
-                    {bankCat && (
+                    {catInfo && (
                       <div className="profile-rule-hint">
-                        {card.bank_name}: «{bankCat.name}» — MCC {bankCat.mccs.join(', ')}
+                        MCC: {catInfo.mccs.slice(0, 8).join(', ')}{catInfo.mccs.length > 8 ? ` +${catInfo.mccs.length - 8}` : ''}
                       </div>
                     )}
                   </div>
@@ -347,8 +346,8 @@ export default function ProfilePage() {
               <div className="profile-rules-actions">
                 <button
                   className="btn-add-rule"
-                  onClick={() => addRule(card.id)}
-                  disabled={(rules[card.id] || []).length >= MCC_OPTIONS.length}
+                  onClick={() => addRule(card.id, card.bank_name)}
+                  disabled={(rules[card.id] || []).length >= (BANK_CATEGORIES[card.bank_name] || []).length}
                 >
                   + Добавить категорию
                 </button>

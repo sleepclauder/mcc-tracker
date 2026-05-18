@@ -4,6 +4,7 @@ const requireAuth = require('../middleware/auth');
 
 const VALID_MONTH = /^\d{4}-(0[1-9]|1[0-2])$/;
 const validPct = (n) => typeof n === 'number' && n > 0 && n <= 100;
+const validCategory = (s) => typeof s === 'string' && s.trim().length > 0 && s.length <= 100;
 
 module.exports = function makeCardsRouter(db) {
   const router = express.Router();
@@ -54,26 +55,24 @@ module.exports = function makeCardsRouter(db) {
     } catch { res.status(500).json({ error: 'server error' }); }
   });
 
-  // GET /cards/best?month=YYYY-MM — best cashback per MCC across all user cards
+  // GET /cards/best?month=YYYY-MM — all user rules as [{category_name, cashback_pct, bank_name}]
+  // Frontend maps category_name → MCCs using bankMcc.js to find best cashback per merchant
   router.get('/best', async (req, res) => {
     const { month } = req.query;
     if (!month || !VALID_MONTH.test(month)) return res.status(400).json({ error: 'invalid month' });
     try {
       const result = await db.execute(
-        `SELECT r.mcc_code, r.cashback_pct, c.bank_name
+        `SELECT r.category_name, r.cashback_pct, c.bank_name
          FROM card_cashback_rules r
          JOIN user_cards c ON c.id = r.card_id
          WHERE c.user_id = :userId AND r.rule_month = :month`,
         { userId: req.user.id, month }
       );
-      const best = {};
-      for (const row of result.rows) {
-        const cur = best[row.MCC_CODE];
-        if (!cur || row.CASHBACK_PCT > cur.pct) {
-          best[row.MCC_CODE] = { pct: row.CASHBACK_PCT, bank: row.BANK_NAME };
-        }
-      }
-      res.json(best);
+      res.json(result.rows.map(r => ({
+        category_name: r.CATEGORY_NAME,
+        cashback_pct: r.CASHBACK_PCT,
+        bank_name: r.BANK_NAME,
+      })));
     } catch { res.status(500).json({ error: 'server error' }); }
   });
 
@@ -88,11 +87,15 @@ module.exports = function makeCardsRouter(db) {
       );
       if (!card.rows.length) return res.status(404).json({ error: 'not found' });
       const rules = await db.execute(
-        `SELECT id, mcc_code, cashback_pct FROM card_cashback_rules
-         WHERE card_id = :cardId AND rule_month = :month ORDER BY mcc_code`,
+        `SELECT id, category_name, cashback_pct FROM card_cashback_rules
+         WHERE card_id = :cardId AND rule_month = :month ORDER BY category_name`,
         { cardId: Number(req.params.id), month }
       );
-      res.json(rules.rows.map(r => ({ id: r.ID, mcc_code: r.MCC_CODE, cashback_pct: r.CASHBACK_PCT })));
+      res.json(rules.rows.map(r => ({
+        id: r.ID,
+        category_name: r.CATEGORY_NAME,
+        cashback_pct: r.CASHBACK_PCT,
+      })));
     } catch { res.status(500).json({ error: 'server error' }); }
   });
 
@@ -102,8 +105,8 @@ module.exports = function makeCardsRouter(db) {
     if (!month || !VALID_MONTH.test(month)) return res.status(400).json({ error: 'invalid month' });
     if (!Array.isArray(rules)) return res.status(400).json({ error: 'rules must be array' });
     for (const r of rules) {
-      if (!r.mcc_code || !/^\d{4}$/.test(r.mcc_code))
-        return res.status(400).json({ error: 'invalid mcc_code' });
+      if (!validCategory(r.category_name))
+        return res.status(400).json({ error: 'invalid category_name' });
       if (!validPct(r.cashback_pct))
         return res.status(400).json({ error: 'cashback_pct must be 0 < n <= 100' });
     }
@@ -120,9 +123,9 @@ module.exports = function makeCardsRouter(db) {
       );
       for (const r of rules) {
         await db.execute(
-          `INSERT INTO card_cashback_rules (card_id, rule_month, mcc_code, cashback_pct)
-           VALUES (:cardId, :month, :mcc_code, :cashback_pct)`,
-          { cardId, month, mcc_code: r.mcc_code, cashback_pct: r.cashback_pct }
+          `INSERT INTO card_cashback_rules (card_id, rule_month, category_name, cashback_pct)
+           VALUES (:cardId, :month, :category_name, :cashback_pct)`,
+          { cardId, month, category_name: r.category_name.trim(), cashback_pct: r.cashback_pct }
         );
       }
       res.json({ ok: true });
