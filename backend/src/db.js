@@ -29,6 +29,22 @@ async function execute(sql, binds = {}, opts = {}) {
   }
 }
 
+async function transaction(fn) {
+  const conn = await pool.getConnection();
+  try {
+    const exec = (sql, binds = {}, opts = {}) =>
+      conn.execute(sql, binds, { autoCommit: false, ...opts });
+    const result = await fn(exec);
+    await conn.commit();
+    return result;
+  } catch (e) {
+    try { await conn.rollback(); } catch {}
+    throw e;
+  } finally {
+    await conn.close();
+  }
+}
+
 async function close() {
   if (pool) {
     await pool.close(0);
@@ -36,4 +52,4 @@ async function close() {
   }
 }
 
-module.exports = { init, execute, close };
+module.exports = { init, execute, transaction, close };

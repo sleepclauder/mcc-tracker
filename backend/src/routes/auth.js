@@ -35,16 +35,22 @@ module.exports = function makeAuthRouter(db) {
 
     try {
       const result = await db.execute(
-        'SELECT id, email, password_hash FROM users WHERE email = :email',
+        'SELECT id, email, password_hash, is_admin, is_blocked FROM users WHERE email = :email',
         { email }
       );
       const user = result.rows[0];
       if (!user) return res.status(401).json({ error: 'invalid credentials' });
 
+      if (user.IS_BLOCKED) return res.status(403).json({ error: 'account blocked' });
+
       const ok = await bcrypt.compare(password, user.PASSWORD_HASH);
       if (!ok) return res.status(401).json({ error: 'invalid credentials' });
 
-      const token = jwt.sign({ id: user.ID, email: user.EMAIL }, process.env.JWT_SECRET, { expiresIn: '7d' });
+      const token = jwt.sign(
+        { id: user.ID, email: user.EMAIL, is_admin: user.IS_ADMIN === 1 },
+        process.env.JWT_SECRET,
+        { expiresIn: '7d' }
+      );
       res.json({ token });
     } catch (e) {
       res.status(500).json({ error: 'server error' });

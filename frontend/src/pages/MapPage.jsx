@@ -10,13 +10,14 @@ import { MapPin, List } from '../components/Icons';
 import Toast from '../components/Toast';
 import { getBestCashbackForMcc, BANK_CATEGORIES } from '../utils/bankMcc';
 import client from '../api/client';
+import { getCurrentUserIsAdmin } from '../utils/auth';
 
 function currentMonth() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 
-function UserMenu({ email, onLogout, onProfile }) {
+function UserMenu({ email, onLogout, onProfile, onAdmin }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -40,6 +41,11 @@ function UserMenu({ email, onLogout, onProfile }) {
           <button className="user-menu-item" onClick={() => { setOpen(false); onProfile(); }}>
             Настройки профиля
           </button>
+          {onAdmin && (
+            <button className="user-menu-item" onClick={() => { setOpen(false); onAdmin(); }}>
+              Администрирование
+            </button>
+          )}
           <button className="user-menu-item user-menu-item--danger" onClick={() => { setOpen(false); onLogout(); }}>
             Выйти
           </button>
@@ -198,7 +204,12 @@ export default function MapPage() {
             {CITIES.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
           </select>
           {authenticated && userEmail
-            ? <UserMenu email={userEmail} onLogout={logout} onProfile={() => navigate('/profile')} />
+            ? <UserMenu
+                email={userEmail}
+                onLogout={logout}
+                onProfile={() => navigate('/profile')}
+                onAdmin={getCurrentUserIsAdmin() ? () => navigate('/admin') : null}
+              />
             : <button className="btn-link" onClick={() => navigate('/login')}>Войти</button>
           }
           <button

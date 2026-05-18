@@ -14,6 +14,7 @@ app.use('/merchants', require('./routes/stats')(db));
 app.use('/votes',     require('./routes/votes')(db));
 app.use('/cards',     require('./routes/cards')(db));
 app.use('/gis',       require('./routes/gis')());
+app.use('/admin',     require('./routes/admin')(db));
 
 app.get('/health', (req, res) => res.json({ ok: true }));
 
