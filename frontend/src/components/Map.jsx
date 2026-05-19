@@ -43,6 +43,7 @@ export default function Map({ onCenterChange, merchants = [], onMerchantHover, f
   const clusterRef = useRef(null);
   const onMerchantHoverRef = useRef(onMerchantHover);
   const renderRef = useRef(null);
+  const flyToRef = useRef(flyTo);
   const navigate = useNavigate();
 
   onMerchantHoverRef.current = onMerchantHover;
@@ -116,7 +117,12 @@ export default function Map({ onCenterChange, merchants = [], onMerchantHover, f
       const [initLon, initLat] = map.getCenter();
       onCenterChange?.(initLat, initLon);
 
-      map.on('styleload', () => renderRef.current());
+      map.on('styleload', () => {
+        if (flyToRef.current) {
+          map.setCenter([flyToRef.current.lon, flyToRef.current.lat], { animate: false });
+        }
+        renderRef.current();
+      });
       map.on('moveend', () => {
         const [lon, lat] = map.getCenter();
         onCenterChange?.(lat, lon);
@@ -146,6 +152,7 @@ export default function Map({ onCenterChange, merchants = [], onMerchantHover, f
   }, [merchants]);
 
   useEffect(() => {
+    flyToRef.current = flyTo;
     if (!flyTo || !mapRef.current) return;
     mapRef.current.map.setCenter([flyTo.lon, flyTo.lat], { animate: true });
   }, [flyTo]);
