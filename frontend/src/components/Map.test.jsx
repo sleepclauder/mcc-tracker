@@ -3,26 +3,32 @@ import { render } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import Map from './Map';
 
-const mockMap = {
-  on: vi.fn(),
-  getCenter: vi.fn(() => [30.36, 59.93]),
-  getZoom: vi.fn(() => 18),
-  setCenter: vi.fn(),
-  setZoom: vi.fn(),
-  destroy: vi.fn(),
-};
-const MockMarker = vi.fn(() => ({ on: vi.fn(), destroy: vi.fn() }));
-const MockHtmlMarker = vi.fn(() => ({ destroy: vi.fn() }));
+const { mockMap, MockMarker } = vi.hoisted(() => {
+  const mockMap = {
+    on: vi.fn(),
+    getCenter: vi.fn(() => ({ lng: 30.36, lat: 59.93 })),
+    getZoom: vi.fn(() => 18),
+    easeTo: vi.fn(),
+    remove: vi.fn(),
+  };
+  const MockMarker = vi.fn(() => ({
+    setLngLat: vi.fn().mockReturnThis(),
+    addTo: vi.fn().mockReturnThis(),
+    remove: vi.fn(),
+  }));
+  return { mockMap, MockMarker };
+});
 
-vi.mock('@2gis/mapgl', () => ({
-  load: vi.fn(() => Promise.resolve({
+vi.mock('maplibre-gl', () => ({
+  default: {
     Map: vi.fn(() => mockMap),
     Marker: MockMarker,
-    HtmlMarker: MockHtmlMarker,
-  })),
+  },
 }));
 
-import { load } from '@2gis/mapgl';
+vi.mock('maplibre-gl/dist/maplibre-gl.css', () => ({}));
+
+import maplibregl from 'maplibre-gl';
 
 const merchants = [
   { YANDEX_FIRM_ID: 'spb_001', NAME: 'Пятёрочка', ADDRESS: 'Невский пр., 88', LAT: 59.93, LON: 30.36, LAST_MCC: null, VOTES_TOTAL: 0 },
@@ -40,8 +46,14 @@ function renderMap(props = {}) {
 describe('Map', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    MockMarker.mockImplementation(() => ({ on: vi.fn(), destroy: vi.fn() }));
-    MockHtmlMarker.mockImplementation(() => ({ destroy: vi.fn() }));
+    MockMarker.mockImplementation(() => ({
+      setLngLat: vi.fn().mockReturnThis(),
+      addTo: vi.fn().mockReturnThis(),
+      remove: vi.fn(),
+    }));
+    mockMap.getCenter.mockReturnValue({ lng: 30.36, lat: 59.93 });
+    mockMap.getZoom.mockReturnValue(18);
+    maplibregl.Map.mockReturnValue(mockMap);
   });
 
   it('renders container div', () => {
@@ -49,9 +61,9 @@ describe('Map', () => {
     expect(container.querySelector('div')).toBeTruthy();
   });
 
-  it('calls load() on mount', async () => {
+  it('creates maplibregl.Map on mount', async () => {
     renderMap();
-    await vi.waitFor(() => expect(load).toHaveBeenCalled());
+    await vi.waitFor(() => expect(maplibregl.Map).toHaveBeenCalled());
   });
 
   it('registers moveend listener', async () => {
@@ -61,7 +73,7 @@ describe('Map', () => {
 
   it('calls onCenterChange with lat/lon on moveend', async () => {
     const onCenterChange = vi.fn();
-    mockMap.getCenter.mockReturnValue([30.36, 59.93]);
+    mockMap.getCenter.mockReturnValue({ lng: 30.36, lat: 59.93 });
     renderMap({ onCenterChange });
     await vi.waitFor(() => expect(mockMap.on).toHaveBeenCalled());
     const handler = mockMap.on.mock.calls.find(([e]) => e === 'moveend')[1];
@@ -72,13 +84,10 @@ describe('Map', () => {
   it('creates markers for merchants at high zoom', async () => {
     mockMap.getZoom.mockReturnValue(18);
     renderMap({ merchants });
-    await vi.waitFor(() => expect(mockMap.on).toHaveBeenCalled());
-    const styleloadHandler = mockMap.on.mock.calls.find(([e]) => e === 'styleload')?.[1];
-    styleloadHandler?.();
     await vi.waitFor(() => expect(MockMarker).toHaveBeenCalledTimes(2));
   });
 
-  it('calls setCenter when flyTo prop changes', async () => {
+  it('calls easeTo when flyTo prop changes', async () => {
     const { rerender } = renderMap();
     await vi.waitFor(() => expect(mockMap.on).toHaveBeenCalled());
     rerender(
@@ -86,13 +95,13 @@ describe('Map', () => {
         <Map flyTo={{ lat: 59.93, lon: 30.32 }} />
       </MemoryRouter>
     );
-    expect(mockMap.setCenter).toHaveBeenCalledWith([30.32, 59.93], { animate: true });
+    expect(mockMap.easeTo).toHaveBeenCalledWith({ center: [30.32, 59.93] });
   });
 
-  it('destroys map on unmount', async () => {
+  it('removes map on unmount', async () => {
     const { unmount } = renderMap();
     await vi.waitFor(() => expect(mockMap.on).toHaveBeenCalled());
     unmount();
-    expect(mockMap.destroy).toHaveBeenCalled();
+    expect(mockMap.remove).toHaveBeenCalled();
   });
 });

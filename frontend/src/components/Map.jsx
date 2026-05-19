@@ -1,11 +1,13 @@
 import { useEffect, useRef } from 'react';
-import { load } from '@2gis/mapgl';
+import maplibregl from 'maplibre-gl';
+import 'maplibre-gl/dist/maplibre-gl.css';
 import Supercluster from 'supercluster';
 import { useNavigate } from 'react-router-dom';
 import { markerIcon, userLocationIcon } from '../utils/mcc';
 
 const LAT_PER_METER = 1 / 111000;
 const CLUSTER_MAX_ZOOM = 14;
+const MAP_STYLE = 'https://tiles.openfreemap.org/styles/liberty';
 
 function toFeatures(merchants) {
   return merchants
@@ -35,6 +37,18 @@ function clusterIcon(count) {
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 }
 
+// div avoids <img> drag behaviour that swallows click events
+function createMarkerEl(svgUri, size) {
+  const el = document.createElement('div');
+  el.style.width = size + 'px';
+  el.style.height = size + 'px';
+  el.style.backgroundImage = `url("${svgUri}")`;
+  el.style.backgroundSize = 'contain';
+  el.style.backgroundRepeat = 'no-repeat';
+  el.style.cursor = 'pointer';
+  return el;
+}
+
 export default function Map({ onCenterChange, merchants = [], onMerchantHover, flyTo, userLocation }) {
   const containerRef = useRef(null);
   const mapRef = useRef(null);
@@ -50,15 +64,15 @@ export default function Map({ onCenterChange, merchants = [], onMerchantHover, f
 
   renderRef.current = function renderClusters() {
     if (!mapRef.current || !clusterRef.current) return;
-    const { map, mapgl } = mapRef.current;
+    const map = mapRef.current;
 
-    markersRef.current.forEach(m => m.destroy());
+    markersRef.current.forEach(m => m.remove());
     markersRef.current = [];
 
     try {
-      const [lon, lat] = map.getCenter();
+      const { lng, lat } = map.getCenter();
       const zoom = Math.floor(map.getZoom());
-      const bbox = centerToBbox(lon, lat);
+      const bbox = centerToBbox(lng, lat);
       const clusters = clusterRef.current.getClusters(bbox, zoom);
 
       clusters.forEach(cluster => {
@@ -66,36 +80,30 @@ export default function Map({ onCenterChange, merchants = [], onMerchantHover, f
         const props = cluster.properties;
 
         if (props.cluster) {
-          const marker = new mapgl.Marker(map, {
-            coordinates: [clon, clat],
-            icon: clusterIcon(props.point_count),
-            size: [props.point_count < 10 ? 36 : props.point_count < 100 ? 44 : 52,
-                   props.point_count < 10 ? 36 : props.point_count < 100 ? 44 : 52],
-          });
-          marker.on('click', () => {
+          const size = props.point_count < 10 ? 36 : props.point_count < 100 ? 44 : 52;
+          const el = createMarkerEl(clusterIcon(props.point_count), size);
+          const marker = new maplibregl.Marker({ element: el }).setLngLat([clon, clat]).addTo(map);
+          // pointerup: MapLibre cancels mousedown on marker elements, which prevents click
+          el.addEventListener('pointerup', () => {
             try {
               const expansionZoom = Math.min(clusterRef.current.getClusterExpansionZoom(props.cluster_id), 18);
-              map.setCenter([clon, clat], { animate: true });
-              map.setZoom(expansionZoom, { animate: true });
+              map.easeTo({ center: [clon, clat], zoom: expansionZoom });
             } catch {}
           });
           markersRef.current.push(marker);
         } else {
           const merchant = props;
-          const marker = new mapgl.Marker(map, {
-            coordinates: [clon, clat],
-            icon: markerIcon(merchant.LAST_MCC),
-            size: [32, 32],
-          });
-          marker.on('click', () => navigate(`/merchant/${merchant.YANDEX_FIRM_ID}`, { state: { merchant } }));
-          marker.on('mouseover', e => {
+          const el = createMarkerEl(markerIcon(merchant.LAST_MCC), 32);
+          const marker = new maplibregl.Marker({ element: el }).setLngLat([clon, clat]).addTo(map);
+          el.addEventListener('pointerup', () => navigate(`/merchant/${merchant.YANDEX_FIRM_ID}`, { state: { merchant } }));
+          el.addEventListener('mouseover', e => {
             const rect = containerRef.current?.getBoundingClientRect();
             if (!rect) return;
-            const x = (e.originalEvent?.clientX ?? 0) - rect.left;
-            const y = (e.originalEvent?.clientY ?? 0) - rect.top;
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
             onMerchantHoverRef.current?.({ merchant, x, y });
           });
-          marker.on('mouseout', () => onMerchantHoverRef.current?.(null));
+          el.addEventListener('mouseout', () => onMerchantHoverRef.current?.(null));
           markersRef.current.push(marker);
         }
       });
@@ -105,37 +113,37 @@ export default function Map({ onCenterChange, merchants = [], onMerchantHover, f
   };
 
   useEffect(() => {
-    load().then(mapgl => {
-      if (!containerRef.current || mapRef.current) return;
-      const map = new mapgl.Map(containerRef.current, {
-        center: [30.3161, 59.9311],
-        zoom: 14,
-        key: import.meta.env.VITE_2GIS_KEY,
-      });
-      mapRef.current = { map, mapgl };
+    if (!containerRef.current || mapRef.current) return;
+    const map = new maplibregl.Map({
+      container: containerRef.current,
+      style: MAP_STYLE,
+      center: [30.3161, 59.9311],
+      zoom: 14,
+    });
+    mapRef.current = map;
 
-      const [initLon, initLat] = map.getCenter();
-      onCenterChange?.(initLat, initLon);
+    map.on('load', () => {
+      const { lng, lat } = map.getCenter();
+      onCenterChange?.(lat, lng);
+      // Apply flyTo if geolocation resolved before map finished loading
+      if (flyToRef.current) {
+        map.setCenter([flyToRef.current.lon, flyToRef.current.lat]);
+      }
+      renderRef.current();
+    });
 
-      map.on('styleload', () => {
-        if (flyToRef.current) {
-          map.setCenter([flyToRef.current.lon, flyToRef.current.lat], { animate: false });
-        }
-        renderRef.current();
-      });
-      map.on('moveend', () => {
-        const [lon, lat] = map.getCenter();
-        onCenterChange?.(lat, lon);
-        renderRef.current();
-      });
-    }).catch(err => console.error('mapgl load error:', err));
+    map.on('moveend', () => {
+      const { lng, lat } = map.getCenter();
+      onCenterChange?.(lat, lng);
+      renderRef.current();
+    });
 
     return () => {
-      markersRef.current.forEach(m => m.destroy());
+      markersRef.current.forEach(m => m.remove());
       markersRef.current = [];
-      userMarkerRef.current?.destroy();
+      userMarkerRef.current?.remove();
       userMarkerRef.current = null;
-      mapRef.current?.map.destroy();
+      mapRef.current?.remove();
       mapRef.current = null;
     };
   }, []);
@@ -154,18 +162,16 @@ export default function Map({ onCenterChange, merchants = [], onMerchantHover, f
   useEffect(() => {
     flyToRef.current = flyTo;
     if (!flyTo || !mapRef.current) return;
-    mapRef.current.map.setCenter([flyTo.lon, flyTo.lat], { animate: true });
+    mapRef.current.easeTo({ center: [flyTo.lon, flyTo.lat] });
   }, [flyTo]);
 
   useEffect(() => {
     if (!userLocation || !mapRef.current) return;
-    const { mapgl, map } = mapRef.current;
-    userMarkerRef.current?.destroy();
-    userMarkerRef.current = new mapgl.Marker(map, {
-      coordinates: [userLocation.lon, userLocation.lat],
-      icon: userLocationIcon(),
-      size: [40, 40],
-    });
+    userMarkerRef.current?.remove();
+    const el = createMarkerEl(userLocationIcon(), 40);
+    userMarkerRef.current = new maplibregl.Marker({ element: el })
+      .setLngLat([userLocation.lon, userLocation.lat])
+      .addTo(mapRef.current);
   }, [userLocation]);
 
   return <div ref={containerRef} style={{ width: '100%', height: '100%' }} />;

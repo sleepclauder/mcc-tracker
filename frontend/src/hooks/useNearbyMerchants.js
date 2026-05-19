@@ -14,19 +14,9 @@ export function useNearbyMerchants(lat, lon, radiusM = 1000) {
       setLoading(true);
       setError(null);
       try {
-        const params = { lat, lon, radius_m: radiusM };
-        const [dbRes, gisRes] = await Promise.all([
-          client.get('/merchants', { params }),
-          client.get('/gis/nearby', { params }).catch(() => ({ data: [] })),
-        ]);
+        const res = await client.get('/merchants', { params: { lat, lon, radius_m: radiusM } });
         if (cancelled) return;
-
-        const dbMap = new Map(dbRes.data.map(m => [m.YANDEX_FIRM_ID, m]));
-        const merged = [...dbRes.data];
-        for (const gm of gisRes.data) {
-          if (!dbMap.has(gm.YANDEX_FIRM_ID)) merged.push(gm);
-        }
-        setMerchants(merged);
+        setMerchants(res.data);
       } catch (e) {
         if (!cancelled) setError(e.response?.data?.error || 'Ошибка загрузки');
       } finally {
