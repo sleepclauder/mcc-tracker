@@ -5,12 +5,13 @@ import { useNearbyMerchants } from '../hooks/useNearbyMerchants';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { MCC_LABELS, MCC_ICONS } from '../utils/mcc';
-import { CITIES, CITY_KEY, CITY_NAME_KEY } from '../utils/cities';
+import { CITY_KEY } from '../utils/cities';
 import { MapPin, List } from '../components/Icons';
 import Toast from '../components/Toast';
 import { getBestCashbackForMcc, BANK_CATEGORIES } from '../utils/bankMcc';
 import client from '../api/client';
 import { getCurrentUserIsAdmin } from '../utils/auth';
+import { Geolocation } from '@capacitor/geolocation';
 
 function currentMonth() {
   const d = new Date();
@@ -31,13 +32,16 @@ function UserMenu({ email, onLogout, onProfile, onAdmin }) {
 
   return (
     <div className="user-menu" ref={ref}>
-      <button className="user-menu-trigger" onClick={() => setOpen(o => !o)}>
-        <span className="user-menu-avatar">{email[0].toUpperCase()}</span>
-        <span className="user-menu-email">{email}</span>
+      <button className="user-menu-trigger" onClick={() => setOpen(o => !o)} title={email}>
+        <span className="user-menu-avatar">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
+        </span>
         <span className="user-menu-caret">{open ? '▴' : '▾'}</span>
       </button>
       {open && (
         <div className="user-menu-dropdown">
+          <div className="user-menu-email">{email}</div>
+          <div className="user-menu-divider" />
           <button className="user-menu-item" onClick={() => { setOpen(false); onProfile(); }}>
             Настройки профиля
           </button>
@@ -97,24 +101,18 @@ export default function MapPage() {
     try { localStorage.setItem(CITY_KEY, JSON.stringify({ lat, lon })); } catch {}
   }
 
-  function requestGeolocation() {
-    if (!navigator.geolocation) {
-      setGeoStatus('denied');
-      setToast({ message: 'Геолокация недоступна — сайт должен открываться по HTTPS', type: 'error' });
-      return;
-    }
+  async function requestGeolocation() {
     setGeoStatus('loading');
-    navigator.geolocation.getCurrentPosition(
-      ({ coords }) => {
-        setGeoStatus('idle');
-        setUserLocation({ lat: coords.latitude, lon: coords.longitude });
-        moveTo(coords.latitude, coords.longitude);
-      },
-      () => {
-        setGeoStatus('denied');
-        setToast({ message: 'Браузер заблокировал геолокацию — разрешите доступ в настройках сайта', type: 'error' });
-      }
-    );
+    try {
+      await Geolocation.requestPermissions();
+      const pos = await Geolocation.getCurrentPosition({ enableHighAccuracy: true, timeout: 10000 });
+      setGeoStatus('idle');
+      setUserLocation({ lat: pos.coords.latitude, lon: pos.coords.longitude });
+      moveTo(pos.coords.latitude, pos.coords.longitude);
+    } catch {
+      setGeoStatus('denied');
+      setToast({ message: 'Не удалось определить местоположение — разрешите доступ в настройках', type: 'error' });
+    }
   }
 
   useEffect(() => { requestGeolocation(); }, []);
@@ -124,13 +122,6 @@ export default function MapPage() {
     try { localStorage.setItem(CITY_KEY, JSON.stringify({ lat, lon })); } catch {}
   }, []);
 
-  function handleCitySelect(e) {
-    const city = CITIES.find(c => c.name === e.target.value);
-    if (city) {
-      moveTo(city.lat, city.lon);
-      try { localStorage.setItem(CITY_NAME_KEY, city.name); } catch {}
-    }
-  }
 
   function toggleMcc(mcc) {
     setSelectedMccs(prev => {
@@ -199,10 +190,6 @@ export default function MapPage() {
           >
             {geoStatus === 'loading' ? '…' : <MapPin size={18} />}
           </button>
-          <select className="city-select" onChange={handleCitySelect} defaultValue="">
-            <option value="" disabled>Выбрать город</option>
-            {CITIES.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
-          </select>
           {authenticated && userEmail
             ? <UserMenu
                 email={userEmail}
