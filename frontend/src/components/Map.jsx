@@ -123,6 +123,13 @@ export default function Map({ onCenterChange, merchants = [], onMerchantHover, f
     mapRef.current = map;
 
     map.on('load', () => {
+      // Hide map's built-in POI layers — we render our own merchant markers
+      map.getStyle().layers.forEach(layer => {
+        if (layer.id.startsWith('poi')) {
+          map.setLayoutProperty(layer.id, 'visibility', 'none');
+        }
+      });
+
       const { lng, lat } = map.getCenter();
       onCenterChange?.(lat, lng);
       // Apply flyTo if geolocation resolved before map finished loading
