@@ -15,10 +15,15 @@ module.exports = function makeGisRouter() {
     if (isNaN(lat) || isNaN(lon)) return res.status(400).json({ error: 'lat and lon required' });
 
     try {
+      // rubric_id list keeps only commercial POI matching our MCC categories:
+      // 164=supermarkets, 179=pharmacies, 101=restaurants/cafes, 1491=fuel, 225=malls
+      const RUBRIC_IDS = '164,179,101,1491,225';
+      const RUBRIC_TO_MCC = { '164': '5411', '179': '5912', '101': '5812', '1491': '5541', '225': '5311' };
       const params = new URLSearchParams({
         radius: String(radius),
         type: 'branch',
-        fields: 'items.point,items.address_name',
+        rubric_id: RUBRIC_IDS,
+        fields: 'items.point,items.address_name,items.rubrics',
         page_size: '10',
         key,
       });
@@ -34,13 +39,17 @@ module.exports = function makeGisRouter() {
       res.json(
         items
           .filter(i => i.point)
-          .map(i => ({
-            YANDEX_FIRM_ID: i.id,
-            NAME: i.name,
-            ADDRESS: i.address_name || '',
-            LAT: i.point.lat,
-            LON: i.point.lon,
-          }))
+          .map(i => {
+            const rubricId = i.rubrics?.[0]?.id ? String(i.rubrics[0].id) : null;
+            return {
+              YANDEX_FIRM_ID: i.id,
+              NAME: i.name,
+              ADDRESS: i.address_name || '',
+              LAT: i.point.lat,
+              LON: i.point.lon,
+              LAST_MCC: RUBRIC_TO_MCC[rubricId] || null,
+            };
+          })
       );
     } catch {
       res.json([]);

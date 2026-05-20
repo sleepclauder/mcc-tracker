@@ -116,6 +116,18 @@ CI/CD (GitHub Actions) triggers automatically on push to `main`: runs both test 
 
 **2GIS Catalog API limits** (`/3.0/items`): `radius` max **2000 m** (not 5000), `page_size` max **10** (not 50). Both violations return HTTP 200 with `meta.code: 400` in the body — `r.ok` is `true` but `result` is absent. Always check `data.meta?.code === 200` after parsing. The `/gis/nearby` backend route caps both automatically.
 
+**2GIS rubric → MCC mapping** (used in `/gis/nearby` to assign `LAST_MCC` to GIS-only results so markers show the correct color/icon immediately, without waiting for user votes):
+
+| rubric_id | 2GIS category | MCC |
+|-----------|--------------|-----|
+| 164 | Продуктовые магазины | 5411 |
+| 179 | Аптеки | 5912 |
+| 101 | Рестораны, кафе | 5812 |
+| 1491 | АЗС | 5541 |
+| 225 | Торговые центры | 5311 |
+
+The `rubric_id` filter also prevents non-commercial POI (waste sites, infrastructure, etc.) from appearing on the map.
+
 **Frontend env vars:**
 - `VITE_API_URL` — backend base URL (without trailing slash, no `/api` suffix)
 - `VITE_2GIS_KEY` — 2GIS MapGL key (demo key, ~1 month validity from May 2026)
