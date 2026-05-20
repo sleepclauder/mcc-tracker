@@ -123,8 +123,11 @@ CI/CD (GitHub Actions) triggers automatically on push to `main`: runs both test 
 | 164 | Продуктовые магазины | 5411 |
 | 179 | Аптеки | 5912 |
 | 101 | Рестораны, кафе | 5812 |
-| 1491 | АЗС | 5541 |
+| 18547 | АЗС | 5541 |
 | 225 | Торговые центры | 5311 |
+| 9041 | Легковой автосервис | 7538 |
+| 7689 | Шиномонтаж | 7534 |
+| 341 | Страхование | 6411 |
 
 The `rubric_id` filter also prevents non-commercial POI (waste sites, infrastructure, etc.) from appearing on the map.
 
@@ -149,9 +152,12 @@ The `rubric_id` filter also prevents non-commercial POI (waste sites, infrastruc
 | 5812 | Ресторан (restaurant/cafe) | orange `#fb8c00` |
 | 5541 | АЗС (fuel) | blue `#1e88e5` |
 | 5311 | Универмаг (department store) | purple `#8e24aa` |
+| 7538 | Автосервис (auto service) | teal `#00897b` |
+| 7534 | Шиномонтаж (tire service) | brown `#795548` |
+| 6411 | Страховая (insurance) | indigo `#3949ab` |
 | 5999 | Прочее | grey `#607d8b` |
 
-All six codes are seeded in `mcc_codes` table. To add a new category: seed the DB, add to `MCC_LABELS`/`MCC_ICONS`/`MARKER_COLORS` in `utils/mcc.js`.
+All codes are seeded in `mcc_codes` table. To add a new category: seed the DB, add to `MCC_LABELS`/`MCC_ICONS`/`MARKER_COLORS` in `utils/mcc.js`.
 
 ## Infrastructure
 
