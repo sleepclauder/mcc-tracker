@@ -129,6 +129,8 @@ export default function Map({ onCenterChange, merchants = [], onMerchantHover, f
           map.setLayoutProperty(layer.id, 'visibility', 'none');
         }
       });
+      // Show house numbers from zoom 14 (liberty style default is 17+)
+      try { map.setLayerZoomRange('housenumber', 14, 24); } catch {}
 
       const { lng, lat } = map.getCenter();
       onCenterChange?.(lat, lng);
