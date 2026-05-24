@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this project is
 
-**ЧекБэк** — crowdsourced map where users vote on MCC (Merchant Category Code) for retail locations to maximize cashback on bank cards. Users see a 2GIS map with colored markers per category, tap a merchant, and vote on its MCC.
+**ЧекБэк** — crowdsourced map where users vote on MCC (Merchant Category Code) for retail locations to maximize cashback on bank cards. Users see a map with colored markers per category, tap a merchant, and vote on its MCC.
 
 **Brand name:** always written as one word — **ЧекБэк** (no space). In the header, "Чек" is black and "Бэк" is red (`#e53935`). Both are wrapped in a single `<span>` so flexbox gap doesn't split them.
 
@@ -69,7 +69,7 @@ CI/CD (GitHub Actions) triggers automatically on push to `main`: runs both test 
 ```
 [Browser / Android WebView (ЧекБэк app)]
   React + Vite SPA
-  2GIS MapGL (npm, not script tag)
+  MapLibre GL + Carto Voyager tiles (free, no key needed)
        │ VITE_API_URL (env) → https://checkback.duckdns.org/api
        ▼
 [Nginx on VM 147.5.126.225 — checkback.duckdns.org]
@@ -124,7 +124,9 @@ CI/CD (GitHub Actions) triggers automatically on push to `main`: runs both test 
 
 **Map centering:** last position is persisted in `localStorage` key `mcc_last_center`. On mount, geolocation is only requested if no saved position exists.
 
-**Marker clustering:** `Map.jsx` uses `supercluster` (not 2GIS native — `GeoJsonSource` doesn't support clustering). Clusters rendered as `Marker` with SVG data-URI icon. Do NOT use `HtmlMarker` — may be absent in CDN runtime. Do NOT use `getBounds()` — throws before style loads; compute bbox from `getCenter()` instead. Always trigger first render on `styleload` event, not immediately after `new mapgl.Map()`.
+**Map library:** `maplibregl` (MapLibre GL JS). Style: `https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json` — free, no key, includes house numbers. Do NOT use `getBounds()` — throws before style loads; compute bbox from `getCenter()` instead. Always trigger first render on `load` event.
+
+**Marker clustering:** `Map.jsx` uses `supercluster`. Clusters rendered as `maplibregl.Marker` with SVG data-URI icon. Markers are stored in a `Map<key, Marker>` — on each `moveend` only new markers are created and off-screen ones removed (diff by `YANDEX_FIRM_ID` for merchants, `cluster_id|point_count` for clusters). Do NOT revert to full rebuild — causes jank with 100+ markers.
 
 **Marker icons:** SVG data URIs built in `utils/mcc.js → markerIcon()`. Uses emoji in SVG `<text>` with emoji font stack. `MARKER_LETTERS` was removed — don't re-add it.
 
@@ -149,7 +151,7 @@ The `rubric_id` filter also prevents non-commercial POI (waste sites, infrastruc
 
 **Frontend env vars:**
 - `VITE_API_URL` — backend base URL (without trailing slash, no `/api` suffix)
-- `VITE_2GIS_KEY` — 2GIS MapGL key (demo key, ~1 month validity from May 2026)
+- `VITE_2GIS_KEY` — used only for 2GIS Catalog API calls in the backend (`GIS_KEY`), not for the map renderer
 
 **Vite dev proxy:** `/api` in `vite.config.js` proxies to the production VM. The backend routes are mounted without `/api` prefix — Nginx strips it.
 

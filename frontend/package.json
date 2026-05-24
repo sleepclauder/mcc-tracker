@@ -1,6 +1,6 @@
 {
   "name": "checkback-frontend",
-  "version": "260524.01",
+  "version": "260525.01",
   "type": "module",
   "engines": {
     "node": ">=22.0.0"
