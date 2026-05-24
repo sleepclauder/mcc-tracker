@@ -78,7 +78,12 @@ export function createMerchantMarkerEl(svgUri, name, cashback, noTerminal) {
     nameSpan.textContent = shortName;
     label.appendChild(nameSpan);
 
-    if (cashback) {
+    if (noTerminal) {
+      const cashLine = document.createElement('div');
+      cashLine.textContent = 'Нет терминала';
+      cashLine.style.cssText = 'color:#c62828;font-weight:700;font-size:8px;text-align:center;';
+      label.appendChild(cashLine);
+    } else if (cashback) {
       const cashLine = document.createElement('div');
       cashLine.textContent = `${cashback.pct}% — ${cashback.bank}`;
       cashLine.style.cssText = 'color:#2e7d32;font-weight:700;font-size:8px;text-align:center;';
