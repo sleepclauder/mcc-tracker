@@ -100,7 +100,7 @@ export default function Map({ onCenterChange, merchants = [], onMerchantHover, f
   const containerRef = useRef(null);
   const mapRef = useRef(null);
   // key → maplibregl.Marker  (cluster: "c|<id>|<count>", merchant: "m|<firmId>|<cashback>|<noTerminal>")
-  const markersRef = useRef(new Map());
+  const markersRef = useRef(new globalThis.Map());
   const userMarkerRef = useRef(null);
   const clusterRef = useRef(null);
   const onMerchantHoverRef = useRef(onMerchantHover);
