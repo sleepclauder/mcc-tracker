@@ -151,9 +151,10 @@ describe('createMerchantMarkerEl', () => {
     expect(el.textContent).not.toContain('…');
   });
 
-  it('shows cashback badge with percent when cashback provided', () => {
+  it('shows cashback badge with percent and bank when cashback provided', () => {
     const el = createMerchantMarkerEl('data:img/svg', 'Магнит', { pct: 5, bank: 'Т-Банк' });
     expect(el.textContent).toContain('5%');
+    expect(el.textContent).toContain('Т-Банк');
     expect(el.textContent).toContain('Магнит');
   });
 
