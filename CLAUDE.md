@@ -196,3 +196,17 @@ All codes are seeded in `mcc_codes` table. To add a new category: seed the DB, a
 - **API:** `https://checkback.duckdns.org/api` (baked in via `.env.production`)
 - **Build:** Android Studio Panda → Build APK. See `docs/android-plan.md`
 - **Icon/splash:** generated via `@capacitor/assets` from `frontend/assets/icon.svg`
+
+### Versioning
+
+Version is maintained in **one place only** — `frontend/package.json` → `"version"` field.
+`android/app/build.gradle` reads it automatically at build time via `JsonSlurper`.
+
+Format: **`yymmdd.NN`** (e.g. `260524.01`, `260524.02`, `260525.01`)
+
+| field | example | formula |
+|-------|---------|---------|
+| `versionName` | `"260524.01"` | raw string from package.json |
+| `versionCode` | `26052401` | `yymmdd × 100 + NN` |
+
+To release a new build: bump `"version"` in `package.json`, then `npx cap sync android` + Build APK in Android Studio. Android requires `versionCode` to be strictly increasing — the formula guarantees this as long as dates advance or the suffix grows.

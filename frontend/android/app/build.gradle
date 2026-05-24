@@ -1,5 +1,12 @@
 apply plugin: 'com.android.application'
 
+// Read version from package.json (format yymmdd.NN)
+def packageJson = new groovy.json.JsonSlurper().parse(file('../../package.json'))
+def appVersionName = packageJson.version  // e.g. "260524.01"
+def versionParts = appVersionName.tokenize('.')
+// versionCode: yymmdd * 100 + NN  →  26052401
+def appVersionCode = (versionParts[0] as Integer) * 100 + (versionParts.size() > 1 ? versionParts[1] as Integer : 1)
+
 android {
     namespace = "ru.mcctracker.app"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -7,8 +14,8 @@ android {
         applicationId "ru.mcctracker.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode appVersionCode
+        versionName appVersionName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
