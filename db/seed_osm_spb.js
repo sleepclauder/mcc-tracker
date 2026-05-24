@@ -7,7 +7,7 @@ const OVERPASS_QUERY = `
 [out:json][timeout:180];
 (
   node["shop"~"^(supermarket|convenience|grocery)$"](59.75,29.50,60.15,30.75);
-  node["amenity"~"^(pharmacy|restaurant|cafe|fast_food|fuel)$"](59.75,29.50,60.15,30.75);
+  node["amenity"~"^(pharmacy|restaurant|cafe|fast_food|pub|bar|fuel)$"](59.75,29.50,60.15,30.75);
   node["shop"~"^(department_store|mall)$"](59.75,29.50,60.15,30.75);
   way["shop"~"^(supermarket|convenience|grocery)$"](59.75,29.50,60.15,30.75);
   way["amenity"~"^(pharmacy|restaurant|cafe|fast_food|fuel)$"](59.75,29.50,60.15,30.75);
@@ -21,7 +21,8 @@ function osmTagToMcc(tags) {
   const { shop, amenity } = tags;
   if (amenity === 'pharmacy')                                         return '5912';
   if (amenity === 'restaurant' || amenity === 'cafe'
-      || amenity === 'fast_food')                                     return '5812';
+      || amenity === 'fast_food' || amenity === 'pub'
+      || amenity === 'bar')                                           return '5812';
   if (amenity === 'fuel')                                             return '5541';
   if (shop === 'department_store' || shop === 'mall')                 return '5311';
   return '5411'; // supermarket / convenience / grocery / default

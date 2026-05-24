@@ -21,11 +21,11 @@ function buildQuery(bbox) {
 [out:json][timeout:180];
 (
   node["shop"~"^(supermarket|convenience|grocery)$"](${b});
-  node["amenity"~"^(pharmacy|restaurant|cafe|fast_food|fuel|car_repair)$"](${b});
+  node["amenity"~"^(pharmacy|restaurant|cafe|fast_food|pub|bar|fuel|car_repair)$"](${b});
   node["shop"~"^(department_store|mall|car_repair|tyres)$"](${b});
   node["office"="insurance"](${b});
   way["shop"~"^(supermarket|convenience|grocery)$"](${b});
-  way["amenity"~"^(pharmacy|restaurant|cafe|fast_food|fuel|car_repair)$"](${b});
+  way["amenity"~"^(pharmacy|restaurant|cafe|fast_food|pub|bar|fuel|car_repair)$"](${b});
   way["shop"~"^(department_store|mall|car_repair|tyres)$"](${b});
   way["office"="insurance"](${b});
 );
@@ -39,7 +39,8 @@ function osmTagToMcc(tags) {
   if (office === 'insurance')                                          return '6411';
   if (amenity === 'pharmacy')                                          return '5912';
   if (amenity === 'restaurant' || amenity === 'cafe'
-      || amenity === 'fast_food')                                      return '5812';
+      || amenity === 'fast_food' || amenity === 'pub'
+      || amenity === 'bar')                                            return '5812';
   if (amenity === 'fuel')                                              return '5541';
   if (amenity === 'car_repair' || shop === 'car_repair')               return '7538';
   if (shop === 'tyres')                                                return '7534';
