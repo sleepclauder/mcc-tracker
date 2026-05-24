@@ -20,6 +20,9 @@ __pycache__/
 *.pyc
 venv/
 
+# Frontend build output
+frontend/dist/
+
 # IDE
 .idea/
 .vscode/
