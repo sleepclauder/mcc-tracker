@@ -99,7 +99,8 @@ export function createMerchantMarkerEl(svgUri, name, cashback, noTerminal) {
 export default function Map({ onCenterChange, merchants = [], onMerchantHover, flyTo, userLocation, merchantCashback = {} }) {
   const containerRef = useRef(null);
   const mapRef = useRef(null);
-  const markersRef = useRef([]);
+  // key → maplibregl.Marker  (cluster: "c|<id>|<count>", merchant: "m|<firmId>|<cashback>|<noTerminal>")
+  const markersRef = useRef(new Map());
   const userMarkerRef = useRef(null);
   const clusterRef = useRef(null);
   const onMerchantHoverRef = useRef(onMerchantHover);
@@ -115,23 +116,35 @@ export default function Map({ onCenterChange, merchants = [], onMerchantHover, f
     if (!mapRef.current || !clusterRef.current) return;
     const map = mapRef.current;
 
-    markersRef.current.forEach(m => m.remove());
-    markersRef.current = [];
-
     try {
       const { lng, lat } = map.getCenter();
       const zoom = Math.floor(map.getZoom());
       const bbox = centerToBbox(lng, lat);
       const clusters = clusterRef.current.getClusters(bbox, zoom);
 
+      const nextKeys = new Set();
+
       clusters.forEach(cluster => {
         const [clon, clat] = cluster.geometry.coordinates;
         const props = cluster.properties;
 
+        let key;
+        if (props.cluster) {
+          key = `c|${props.cluster_id}|${props.point_count}`;
+        } else {
+          const cashback = merchantCashbackRef.current[props.YANDEX_FIRM_ID] ?? null;
+          const noTerminal = (props.NO_TERMINAL_COUNT ?? 0) > 0;
+          key = `m|${props.YANDEX_FIRM_ID}|${cashback ? cashback.pct + cashback.bank : ''}|${noTerminal}`;
+        }
+        nextKeys.add(key);
+
+        if (markersRef.current.has(key)) return; // already on map, nothing to do
+
+        let marker;
         if (props.cluster) {
           const size = props.point_count < 10 ? 36 : props.point_count < 100 ? 44 : 52;
           const el = createMarkerEl(clusterIcon(props.point_count), size);
-          const marker = new maplibregl.Marker({ element: el }).setLngLat([clon, clat]).addTo(map);
+          marker = new maplibregl.Marker({ element: el }).setLngLat([clon, clat]).addTo(map);
           // pointerup: MapLibre cancels mousedown on marker elements, which prevents click
           el.addEventListener('pointerup', () => {
             try {
@@ -139,13 +152,12 @@ export default function Map({ onCenterChange, merchants = [], onMerchantHover, f
               map.easeTo({ center: [clon, clat], zoom: expansionZoom });
             } catch {}
           });
-          markersRef.current.push(marker);
         } else {
           const merchant = props;
           const cashback = merchantCashbackRef.current[merchant.YANDEX_FIRM_ID] ?? null;
           const noTerminal = (merchant.NO_TERMINAL_COUNT ?? 0) > 0;
           const el = createMerchantMarkerEl(markerIcon(merchant.LAST_MCC), merchant.NAME, cashback, noTerminal);
-          const marker = new maplibregl.Marker({ element: el, anchor: 'top' }).setLngLat([clon, clat]).addTo(map);
+          marker = new maplibregl.Marker({ element: el, anchor: 'top' }).setLngLat([clon, clat]).addTo(map);
 
           // Desktop: click navigates, hover shows tooltip
           el.addEventListener('pointerup', (e) => {
@@ -181,10 +193,18 @@ export default function Map({ onCenterChange, merchants = [], onMerchantHover, f
             }
             e.preventDefault();
           });
-
-          markersRef.current.push(marker);
         }
+
+        markersRef.current.set(key, marker);
       });
+
+      // Remove markers that are no longer in view
+      for (const [key, marker] of markersRef.current) {
+        if (!nextKeys.has(key)) {
+          marker.remove();
+          markersRef.current.delete(key);
+        }
+      }
     } catch (err) {
       console.error('renderClusters error:', err);
     }
@@ -224,7 +244,7 @@ export default function Map({ onCenterChange, merchants = [], onMerchantHover, f
 
     return () => {
       markersRef.current.forEach(m => m.remove());
-      markersRef.current = [];
+      markersRef.current.clear();
       userMarkerRef.current?.remove();
       userMarkerRef.current = null;
       mapRef.current?.remove();
