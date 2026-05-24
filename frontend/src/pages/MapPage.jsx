@@ -84,9 +84,28 @@ export default function MapPage() {
   const [geoStatus, setGeoStatus] = useState('idle');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [query, setQuery] = useState('');
-  const [selectedMccs, setSelectedMccs] = useState(new Set());
-  const [selectedBank, setSelectedBank] = useState(null);
-  const [selectedBankCategories, setSelectedBankCategories] = useState(new Set());
+  const [selectedMccs, setSelectedMccs] = useState(() => {
+    try { const s = sessionStorage.getItem('cb_filter_mccs'); if (s) return new Set(JSON.parse(s)); } catch {}
+    return new Set();
+  });
+  const [selectedBank, setSelectedBank] = useState(() => sessionStorage.getItem('cb_filter_bank') || null);
+  const [selectedBankCategories, setSelectedBankCategories] = useState(() => {
+    try { const s = sessionStorage.getItem('cb_filter_bank_cats'); if (s) return new Set(JSON.parse(s)); } catch {}
+    return new Set();
+  });
+
+  useEffect(() => {
+    try { sessionStorage.setItem('cb_filter_mccs', JSON.stringify([...selectedMccs])); } catch {}
+  }, [selectedMccs]);
+  useEffect(() => {
+    try {
+      if (selectedBank) sessionStorage.setItem('cb_filter_bank', selectedBank);
+      else sessionStorage.removeItem('cb_filter_bank');
+    } catch {}
+  }, [selectedBank]);
+  useEffect(() => {
+    try { sessionStorage.setItem('cb_filter_bank_cats', JSON.stringify([...selectedBankCategories])); } catch {}
+  }, [selectedBankCategories]);
 
   const { merchants, loading, error } = useNearbyMerchants(center.lat, center.lon, 3000);
   const { authenticated, userEmail, logout } = useAuth();
@@ -120,7 +139,9 @@ export default function MapPage() {
     }
   }
 
-  useEffect(() => { requestGeolocation(); }, []);
+  useEffect(() => {
+    try { if (!localStorage.getItem(CITY_KEY)) requestGeolocation(); } catch { requestGeolocation(); }
+  }, []);
 
   const handleCenterChange = useCallback((lat, lon) => {
     setCenter({ lat, lon });
@@ -198,14 +219,6 @@ export default function MapPage() {
           <span>Чек<span style={{color:'#e53935'}}>Бэк</span></span>
         </span>
         <div className="header-controls">
-          <button
-            className="btn-icon btn-geo"
-            onClick={requestGeolocation}
-            title="Определить моё местоположение"
-            disabled={geoStatus === 'loading'}
-          >
-            {geoStatus === 'loading' ? '…' : <MapPin size={18} />}
-          </button>
           {authenticated && userEmail
             ? <UserMenu
                 email={userEmail}
@@ -225,45 +238,6 @@ export default function MapPage() {
           </button>
         </div>
       </header>
-
-      <div className="filter-bar">
-        <select
-          className="bank-filter-select"
-          value={selectedBank || ''}
-          onChange={handleBankChange}
-        >
-          <option value="">Все банки</option>
-          {Object.keys(BANK_CATEGORIES).map(bank => (
-            <option key={bank} value={bank}>{bank}</option>
-          ))}
-        </select>
-        <span className="filter-bar-divider" />
-        {selectedBank
-          ? (BANK_CATEGORIES[selectedBank] || []).map(cat => (
-              <button
-                key={cat.name}
-                className={`mcc-chip${selectedBankCategories.has(cat.name) ? ' mcc-chip--active' : ''}`}
-                onClick={() => toggleBankCategory(cat.name)}
-              >
-                {cat.name}
-              </button>
-            ))
-          : MCC_CATEGORIES.map(({ mcc, label, icon }) => (
-              <button
-                key={mcc}
-                className={`mcc-chip${selectedMccs.has(mcc) ? ' mcc-chip--active' : ''}`}
-                onClick={() => toggleMcc(mcc)}
-              >
-                {icon} {label}
-              </button>
-            ))
-        }
-        {(selectedMccs.size > 0 || selectedBankCategories.size > 0) && (
-          <button className="mcc-chip-clear" onClick={clearFilters}>
-            Сбросить
-          </button>
-        )}
-      </div>
 
       <div className="map-layout">
         <div className="map-container" onClick={() => {
@@ -319,6 +293,52 @@ export default function MapPage() {
               ) : null; })()}
             </div>
           )}
+          <button
+            className="btn-geo-fab"
+            onClick={requestGeolocation}
+            title="Определить моё местоположение"
+            disabled={geoStatus === 'loading'}
+          >
+            {geoStatus === 'loading' ? '…' : <MapPin size={18} />}
+          </button>
+          <div className="filter-bar">
+            <select
+              className="bank-filter-select"
+              value={selectedBank || ''}
+              onChange={handleBankChange}
+            >
+              <option value="">Все банки</option>
+              {Object.keys(BANK_CATEGORIES).map(bank => (
+                <option key={bank} value={bank}>{bank}</option>
+              ))}
+            </select>
+            <span className="filter-bar-divider" />
+            {selectedBank
+              ? (BANK_CATEGORIES[selectedBank] || []).map(cat => (
+                  <button
+                    key={cat.name}
+                    className={`mcc-chip${selectedBankCategories.has(cat.name) ? ' mcc-chip--active' : ''}`}
+                    onClick={() => toggleBankCategory(cat.name)}
+                  >
+                    {cat.name}
+                  </button>
+                ))
+              : MCC_CATEGORIES.map(({ mcc, label, icon }) => (
+                  <button
+                    key={mcc}
+                    className={`mcc-chip${selectedMccs.has(mcc) ? ' mcc-chip--active' : ''}`}
+                    onClick={() => toggleMcc(mcc)}
+                  >
+                    {icon} {label}
+                  </button>
+                ))
+            }
+            {(selectedMccs.size > 0 || selectedBankCategories.size > 0) && (
+              <button className="mcc-chip-clear" onClick={clearFilters}>
+                Сбросить
+              </button>
+            )}
+          </div>
         </div>
         <aside className={`sidebar${sidebarOpen ? ' sidebar--open' : ''}`}>
           <h3>Магазины рядом {!loading && <span className="sidebar-count">({filteredMerchants.length})</span>}</h3>
