@@ -8,10 +8,10 @@ const OVERPASS_QUERY = `
 (
   node["shop"~"^(supermarket|convenience|grocery)$"](59.75,29.50,60.15,30.75);
   node["amenity"~"^(pharmacy|restaurant|cafe|fast_food|pub|bar|fuel)$"](59.75,29.50,60.15,30.75);
-  node["shop"~"^(department_store|mall)$"](59.75,29.50,60.15,30.75);
+  node["shop"~"^(department_store|mall|alcohol|wine|hairdresser|beauty)$"](59.75,29.50,60.15,30.75);
   way["shop"~"^(supermarket|convenience|grocery)$"](59.75,29.50,60.15,30.75);
   way["amenity"~"^(pharmacy|restaurant|cafe|fast_food|fuel)$"](59.75,29.50,60.15,30.75);
-  way["shop"~"^(department_store|mall)$"](59.75,29.50,60.15,30.75);
+  way["shop"~"^(department_store|mall|alcohol|wine|hairdresser|beauty)$"](59.75,29.50,60.15,30.75);
 );
 out body center 50000;
 `.trim();
@@ -24,6 +24,8 @@ function osmTagToMcc(tags) {
       || amenity === 'fast_food' || amenity === 'pub'
       || amenity === 'bar')                                           return '5812';
   if (amenity === 'fuel')                                             return '5541';
+  if (shop === 'alcohol' || shop === 'wine')                          return '5921';
+  if (shop === 'hairdresser' || shop === 'beauty')                    return '7230';
   if (shop === 'department_store' || shop === 'mall')                 return '5311';
   return '5411'; // supermarket / convenience / grocery / default
 }

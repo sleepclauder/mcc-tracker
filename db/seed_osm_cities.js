@@ -22,11 +22,11 @@ function buildQuery(bbox) {
 (
   node["shop"~"^(supermarket|convenience|grocery)$"](${b});
   node["amenity"~"^(pharmacy|restaurant|cafe|fast_food|pub|bar|fuel|car_repair)$"](${b});
-  node["shop"~"^(department_store|mall|car_repair|tyres)$"](${b});
+  node["shop"~"^(department_store|mall|car_repair|tyres|alcohol|wine|hairdresser|beauty)$"](${b});
   node["office"="insurance"](${b});
   way["shop"~"^(supermarket|convenience|grocery)$"](${b});
   way["amenity"~"^(pharmacy|restaurant|cafe|fast_food|pub|bar|fuel|car_repair)$"](${b});
-  way["shop"~"^(department_store|mall|car_repair|tyres)$"](${b});
+  way["shop"~"^(department_store|mall|car_repair|tyres|alcohol|wine|hairdresser|beauty)$"](${b});
   way["office"="insurance"](${b});
 );
 out body center 50000;
@@ -44,6 +44,8 @@ function osmTagToMcc(tags) {
   if (amenity === 'fuel')                                              return '5541';
   if (amenity === 'car_repair' || shop === 'car_repair')               return '7538';
   if (shop === 'tyres')                                                return '7534';
+  if (shop === 'alcohol' || shop === 'wine')                           return '5921';
+  if (shop === 'hairdresser' || shop === 'beauty')                     return '7230';
   if (shop === 'department_store' || shop === 'mall')                  return '5311';
   return '5411'; // supermarket / convenience / grocery / default
 }
