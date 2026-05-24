@@ -210,3 +210,14 @@ Format: **`yymmdd.NN`** (e.g. `260524.01`, `260524.02`, `260525.01`)
 | `versionCode` | `26052401` | `yymmdd × 100 + NN` |
 
 To release a new build: bump `"version"` in `package.json`, then `npx cap sync android` + Build APK in Android Studio. Android requires `versionCode` to be strictly increasing — the formula guarantees this as long as dates advance or the suffix grows.
+
+### Release signing
+
+APK is signed with a fixed keystore so updates install over previous versions without conflicts.
+
+- Keystore: `frontend/android/app/checkback-release.jks` — **never in git**, back it up separately
+- Credentials: `frontend/android/keystore.properties` — **never in git**
+- `build.gradle` loads `keystore.properties` automatically at build time
+
+If setting up on a new machine: copy both files from backup before building.  
+To build a signed release APK: **Build → Generate Signed Bundle / APK → APK → use existing key** in Android Studio.
