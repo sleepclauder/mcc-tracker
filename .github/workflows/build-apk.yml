@@ -32,6 +32,13 @@ jobs:
           npm install
           npm run build
 
+      - name: Check required files
+        run: |
+          test -f frontend/capacitor.config.json || (echo "ERROR: frontend/capacitor.config.json not committed" && exit 1)
+          test -d frontend/dist             || (echo "ERROR: frontend/dist missing — build step failed?" && exit 1)
+          test -f frontend/dist/index.html  || (echo "ERROR: frontend/dist/index.html missing" && exit 1)
+          node --version | grep -E "^v(2[2-9]|[3-9][0-9])\." || (echo "ERROR: Node.js >=22 required" && exit 1)
+
       - name: Capacitor sync
         run: |
           cd frontend
