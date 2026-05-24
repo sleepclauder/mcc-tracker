@@ -147,8 +147,10 @@ describe('MapPage — pinned tooltip (мобильный long-press)', () => {
 
   it('клик по карте (вне tooltip) скрывает pinned tooltip', async () => {
     await showPinnedTooltip();
-    // Клик по map-container (не по самому tooltip — stopPropagation не мешает)
     const mapContainer = screen.getByTestId('map').parentElement;
+    // First click is suppressed (simulates Android synthetic click fired right after touchend).
+    // Second click is the user's intentional tap outside.
+    fireEvent.click(mapContainer);
     fireEvent.click(mapContainer);
     expect(screen.queryByText('Тест Маркет')).toBeNull();
   });

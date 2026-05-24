@@ -371,6 +371,19 @@ export function getBankCategoryForMcc(bankName, mccCode) {
   return cats.find(c => c.mccs.includes(mccCode)) ?? null;
 }
 
+// Returns all matching cashbacks [{pct, bank, category}] sorted by pct desc.
+export function getAllCashbacksForMcc(mccCode, rules) {
+  const results = [];
+  for (const rule of rules) {
+    const cats = BANK_CATEGORIES[rule.bank_name] || [];
+    const cat = cats.find(c => c.mccs.includes(mccCode));
+    if (cat && cat.name === rule.category_name) {
+      results.push({ pct: rule.cashback_pct, bank: rule.bank_name, category: cat.name });
+    }
+  }
+  return results.sort((a, b) => b.pct - a.pct);
+}
+
 // Given a merchant MCC and the user's rules array [{category_name, cashback_pct, bank_name}],
 // returns the best cashback {pct, bank} or null.
 export function getBestCashbackForMcc(mccCode, rules) {

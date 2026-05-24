@@ -76,6 +76,11 @@ export default function MapPage() {
   const [userLocation, setUserLocation] = useState(null);
   const [toast, setToast] = useState(null);
   const [hoveredState, setHoveredState] = useState(null);
+  const suppressDismissRef = useRef(false);
+  const handleMerchantHover = useCallback((state) => {
+    if (state?.pinned) suppressDismissRef.current = true;
+    setHoveredState(state);
+  }, []);
   const [geoStatus, setGeoStatus] = useState('idle');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -261,7 +266,10 @@ export default function MapPage() {
       </div>
 
       <div className="map-layout">
-        <div className="map-container" onClick={() => { if (hoveredState?.pinned) setHoveredState(null); }}>
+        <div className="map-container" onClick={() => {
+          if (suppressDismissRef.current) { suppressDismissRef.current = false; return; }
+          if (hoveredState?.pinned) setHoveredState(null);
+        }}>
           {loading && center.lat !== null && (
             <div className="map-loading">
               <span className="map-loading-spinner" />
@@ -281,7 +289,7 @@ export default function MapPage() {
           <Map
             onCenterChange={handleCenterChange}
             merchants={filteredMerchants}
-            onMerchantHover={setHoveredState}
+            onMerchantHover={handleMerchantHover}
             flyTo={flyTo}
             userLocation={userLocation}
             merchantCashback={merchantCashbackMap}
@@ -307,7 +315,7 @@ export default function MapPage() {
                 <span>{hm.VOTES_TOTAL} голос(ов)</span>
               )}
               {hm.LAST_MCC && (() => { const b = getBestCashbackForMcc(hm.LAST_MCC, bestCashback); return b ? (
-                <span className="map-tooltip-cashback">💳 {b.bank} {b.pct}%</span>
+                <span className="map-tooltip-cashback">💳 {b.pct}% ({b.bank})</span>
               ) : null; })()}
             </div>
           )}

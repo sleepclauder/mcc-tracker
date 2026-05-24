@@ -6,7 +6,12 @@ import Toast from '../components/Toast';
 import { ArrowLeft } from '../components/Icons';
 import { isAuthenticated } from '../utils/auth';
 import { mccLabel, MCC_ICONS } from '../utils/mcc';
-import { getMccBankCoverage } from '../utils/bankMcc';
+import { getMccBankCoverage, getAllCashbacksForMcc } from '../utils/bankMcc';
+
+function currentMonth() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
 
 function GisReviewsLink({ gisUrl }) {
   if (!gisUrl) return null;
@@ -49,6 +54,7 @@ export default function MerchantPage() {
   const [error, setError] = useState(null);
   const [showVote, setShowVote] = useState(false);
   const [toast, setToast] = useState(null);
+  const [userCashbacks, setUserCashbacks] = useState([]);
 
   async function loadStats() {
     setLoading(true);
@@ -69,6 +75,13 @@ export default function MerchantPage() {
   }
 
   useEffect(() => { loadStats(); }, [yandex_firm_id]);
+
+  useEffect(() => {
+    if (!isAuthenticated()) return;
+    client.get(`/cards/best?month=${currentMonth()}`)
+      .then(r => setUserCashbacks(r.data))
+      .catch(() => {});
+  }, []);
 
   if (loading) return <div className="page-status">Загрузка...</div>;
   if (error)   return <div className="page-status error">{error}</div>;
@@ -118,6 +131,27 @@ export default function MerchantPage() {
       </div>
 
       <BankCoverage mcc={stats.TOP_MCC_30D || stats.LAST_MCC} />
+
+      {(() => {
+        const mcc = stats.TOP_MCC_30D || stats.LAST_MCC;
+        if (!mcc || !isAuthenticated()) return null;
+        const cashbacks = getAllCashbacksForMcc(mcc, userCashbacks);
+        if (!cashbacks.length) return null;
+        return (
+          <div className="bank-coverage">
+            <p className="bank-coverage-title">Ваши карты для MCC {mcc}</p>
+            <div className="bank-coverage-list">
+              {cashbacks.map(({ bank, pct, category }) => (
+                <div key={bank} className="bank-coverage-row">
+                  <span className="bank-coverage-name">{bank}</span>
+                  <span className="bank-coverage-cat">{category}</span>
+                  <span style={{ marginLeft: 'auto', fontWeight: 700, color: '#2e7d32' }}>{pct}%</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
 
       <div className="merchant-actions">
         {isAuthenticated()

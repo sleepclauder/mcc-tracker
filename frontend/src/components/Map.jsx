@@ -68,7 +68,7 @@ export function createMerchantMarkerEl(svgUri, name, cashback) {
 
     if (cashback) {
       const cashSpan = document.createElement('span');
-      cashSpan.textContent = ` · ${cashback.pct}%`;
+      cashSpan.textContent = ` · ${cashback.pct}% (${cashback.bank})`;
       cashSpan.style.cssText = 'color:#2e7d32;font-weight:700;';
       label.appendChild(cashSpan);
     }

@@ -32,7 +32,9 @@ export default function VoteModal({ merchant, onClose, onSuccess }) {
       onSuccess?.();
       onClose();
     } catch (e) {
-      setError(e.response?.data?.error || 'Ошибка голосования');
+      const status = e.response?.status;
+      const msg = e.response?.data?.error;
+      setError(msg || (status ? `Ошибка ${status}` : `Нет ответа от сервера: ${e.message}`));
     } finally {
       setLoading(false);
     }
