@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import Map from '../components/Map';
 import MerchantList from '../components/MerchantList';
 import { useNearbyMerchants } from '../hooks/useNearbyMerchants';
@@ -89,7 +89,7 @@ export default function MapPage() {
   const [bestCashback, setBestCashback] = useState([]); // [{category_name, cashback_pct, bank_name}]
 
   useEffect(() => {
-    if (!authenticated) { setBestCashback({}); return; }
+    if (!authenticated) { setBestCashback([]); return; }
     client.get(`/cards/best?month=${currentMonth()}`)
       .then(r => setBestCashback(r.data))
       .catch(() => {});
@@ -156,6 +156,17 @@ export default function MapPage() {
           .flatMap(c => c.mccs)
       )
     : null;
+
+  const merchantCashbackMap = useMemo(() => {
+    const map = {};
+    merchants.forEach(m => {
+      if (m.LAST_MCC) {
+        const b = getBestCashbackForMcc(m.LAST_MCC, bestCashback);
+        if (b) map[m.YANDEX_FIRM_ID] = b;
+      }
+    });
+    return map;
+  }, [merchants, bestCashback]);
 
   const filteredMerchants = merchants.filter(m => {
     if (activeBankMccs) {
@@ -250,7 +261,7 @@ export default function MapPage() {
       </div>
 
       <div className="map-layout">
-        <div className="map-container">
+        <div className="map-container" onClick={() => { if (hoveredState?.pinned) setHoveredState(null); }}>
           {loading && center.lat !== null && (
             <div className="map-loading">
               <span className="map-loading-spinner" />
@@ -273,12 +284,17 @@ export default function MapPage() {
             onMerchantHover={setHoveredState}
             flyTo={flyTo}
             userLocation={userLocation}
+            merchantCashback={merchantCashbackMap}
           />
           {hm && (
             <div
-              className="map-tooltip"
+              className={`map-tooltip${hoveredState.pinned ? ' map-tooltip--pinned' : ''}`}
               style={{ left: hoveredState.x + 14, top: hoveredState.y }}
+              onClick={e => e.stopPropagation()}
             >
+              {hoveredState.pinned && (
+                <button className="map-tooltip-close" onClick={() => setHoveredState(null)}>×</button>
+              )}
               <strong>{hm.NAME}</strong>
               <span>{hm.ADDRESS}</span>
               {hm.LAST_MCC && (

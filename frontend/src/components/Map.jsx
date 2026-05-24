@@ -49,18 +49,50 @@ function createMarkerEl(svgUri, size) {
   return el;
 }
 
-export default function Map({ onCenterChange, merchants = [], onMerchantHover, flyTo, userLocation }) {
+export function createMerchantMarkerEl(svgUri, name, cashback) {
+  const wrapper = document.createElement('div');
+  wrapper.style.cssText = 'display:flex;flex-direction:column;align-items:center;cursor:pointer;';
+
+  const icon = document.createElement('div');
+  icon.style.cssText = `width:32px;height:32px;background-image:url("${svgUri}");background-size:contain;background-repeat:no-repeat;`;
+  wrapper.appendChild(icon);
+
+  const shortName = name ? (name.length > 14 ? name.slice(0, 13) + '…' : name) : '';
+  if (shortName) {
+    const label = document.createElement('div');
+    label.style.cssText = 'background:rgba(255,255,255,0.93);border-radius:3px;font-size:9px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;padding:1px 4px;max-width:90px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;box-shadow:0 1px 3px rgba(0,0,0,0.25);margin-top:1px;color:#1a1a1a;line-height:1.5;';
+
+    const nameSpan = document.createElement('span');
+    nameSpan.textContent = shortName;
+    label.appendChild(nameSpan);
+
+    if (cashback) {
+      const cashSpan = document.createElement('span');
+      cashSpan.textContent = ` · ${cashback.pct}%`;
+      cashSpan.style.cssText = 'color:#2e7d32;font-weight:700;';
+      label.appendChild(cashSpan);
+    }
+
+    wrapper.appendChild(label);
+  }
+
+  return wrapper;
+}
+
+export default function Map({ onCenterChange, merchants = [], onMerchantHover, flyTo, userLocation, merchantCashback = {} }) {
   const containerRef = useRef(null);
   const mapRef = useRef(null);
   const markersRef = useRef([]);
   const userMarkerRef = useRef(null);
   const clusterRef = useRef(null);
   const onMerchantHoverRef = useRef(onMerchantHover);
+  const merchantCashbackRef = useRef(merchantCashback);
   const renderRef = useRef(null);
   const flyToRef = useRef(flyTo);
   const navigate = useNavigate();
 
   onMerchantHoverRef.current = onMerchantHover;
+  merchantCashbackRef.current = merchantCashback;
 
   renderRef.current = function renderClusters() {
     if (!mapRef.current || !clusterRef.current) return;
@@ -93,17 +125,45 @@ export default function Map({ onCenterChange, merchants = [], onMerchantHover, f
           markersRef.current.push(marker);
         } else {
           const merchant = props;
-          const el = createMarkerEl(markerIcon(merchant.LAST_MCC), 32);
-          const marker = new maplibregl.Marker({ element: el }).setLngLat([clon, clat]).addTo(map);
-          el.addEventListener('pointerup', () => navigate(`/merchant/${merchant.YANDEX_FIRM_ID}`, { state: { merchant } }));
+          const cashback = merchantCashbackRef.current[merchant.YANDEX_FIRM_ID] ?? null;
+          const el = createMerchantMarkerEl(markerIcon(merchant.LAST_MCC), merchant.NAME, cashback);
+          const marker = new maplibregl.Marker({ element: el, anchor: 'top' }).setLngLat([clon, clat]).addTo(map);
+
+          // Desktop: click navigates, hover shows tooltip
+          el.addEventListener('pointerup', (e) => {
+            if (e.pointerType === 'touch') return; // handled by touch events
+            navigate(`/merchant/${merchant.YANDEX_FIRM_ID}`, { state: { merchant } });
+          });
           el.addEventListener('mouseover', e => {
             const rect = containerRef.current?.getBoundingClientRect();
             if (!rect) return;
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            onMerchantHoverRef.current?.({ merchant, x, y });
+            onMerchantHoverRef.current?.({ merchant, x: e.clientX - rect.left, y: e.clientY - rect.top });
           });
           el.addEventListener('mouseout', () => onMerchantHoverRef.current?.(null));
+
+          // Mobile: short tap navigates, long press shows tooltip
+          let pressTimer = null;
+          el.addEventListener('touchstart', (e) => {
+            const touch = e.touches[0];
+            const rect = containerRef.current?.getBoundingClientRect();
+            if (!rect) return;
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+            pressTimer = setTimeout(() => {
+              pressTimer = null;
+              onMerchantHoverRef.current?.({ merchant, x, y, pinned: true });
+            }, 500);
+          }, { passive: true });
+          el.addEventListener('touchmove', () => { clearTimeout(pressTimer); pressTimer = null; }, { passive: true });
+          el.addEventListener('touchend', (e) => {
+            if (pressTimer !== null) {
+              clearTimeout(pressTimer);
+              pressTimer = null;
+              navigate(`/merchant/${merchant.YANDEX_FIRM_ID}`, { state: { merchant } });
+            }
+            e.preventDefault();
+          });
+
           markersRef.current.push(marker);
         }
       });

@@ -147,6 +147,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 /* Map tooltip cashback badge */
 .map-tooltip-cashback { color: #2e7d32; font-weight: 600; }
 
+/* Pinned tooltip (mobile long-press) */
+.map-tooltip--pinned { pointer-events: auto; position: relative; }
+.map-tooltip-close { position: absolute; top: 6px; right: 8px; background: none; border: none; font-size: 18px; line-height: 1; color: #999; cursor: pointer; padding: 0; }
+
 /* Profile page */
 .profile-page { display: flex; flex-direction: column; height: 100vh; }
 .profile-content { flex: 1; overflow-y: auto; padding: 24px; max-width: 680px; margin: 0 auto; width: 100%; box-sizing: border-box; }
