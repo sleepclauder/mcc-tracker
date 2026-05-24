@@ -55,13 +55,13 @@ jobs:
         run: |
           DATE=$(date +%y%m%d)
           COUNT=$(git rev-list --count HEAD)
-          APK_NAME="${DATE}.${COUNT}.apk"
+          APK_NAME="checkback-${DATE}.${COUNT}.apk"
           cp frontend/android/app/build/outputs/apk/debug/app-debug.apk "$APK_NAME"
           echo "APK_NAME=$APK_NAME" >> $GITHUB_ENV
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: checkback-${{ env.APK_NAME }}
+          name: ${{ env.APK_NAME }}
           path: ${{ env.APK_NAME }}
           retention-days: 30
