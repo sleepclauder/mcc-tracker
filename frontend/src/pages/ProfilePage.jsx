@@ -248,23 +248,27 @@ export default function ProfilePage() {
           <button className="btn-icon" onClick={() => setMonth(m => adjacentMonth(m, 1))}>›</button>
         </div>
 
-        <h2 className="profile-section-title">Мой город</h2>
-        <div className="profile-city-grid">
-          {CITIES.map(city => (
-            <button
-              key={city.name}
-              className={`profile-city-item${preferredCity === city.name ? ' profile-city-item--active' : ''}`}
-              onClick={() => {
-                setPreferredCity(city.name);
-                try {
-                  localStorage.setItem(CITY_NAME_KEY, city.name);
-                  localStorage.setItem(CITY_KEY, JSON.stringify({ lat: city.lat, lon: city.lon }));
-                } catch {}
-              }}
-            >
-              {city.name}
-            </button>
-          ))}
+        <div className="profile-city-row">
+          <label className="profile-city-label" htmlFor="city-select">Город</label>
+          <select
+            id="city-select"
+            className="profile-city-select"
+            value={preferredCity}
+            onChange={e => {
+              const city = CITIES.find(c => c.name === e.target.value);
+              if (!city) return;
+              setPreferredCity(city.name);
+              try {
+                localStorage.setItem(CITY_NAME_KEY, city.name);
+                localStorage.setItem(CITY_KEY, JSON.stringify({ lat: city.lat, lon: city.lon }));
+              } catch {}
+            }}
+          >
+            <option value="" disabled>Выберите город</option>
+            {CITIES.map(city => (
+              <option key={city.name} value={city.name}>{city.name}</option>
+            ))}
+          </select>
         </div>
 
         <h2 className="profile-section-title">Мои карты</h2>
