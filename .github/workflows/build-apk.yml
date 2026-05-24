@@ -24,7 +24,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: 21
 
       - name: Build frontend
         run: |
@@ -38,6 +38,7 @@ jobs:
           test -d frontend/dist             || (echo "ERROR: frontend/dist missing — build step failed?" && exit 1)
           test -f frontend/dist/index.html  || (echo "ERROR: frontend/dist/index.html missing" && exit 1)
           node --version | grep -E "^v(2[2-9]|[3-9][0-9])\." || (echo "ERROR: Node.js >=22 required" && exit 1)
+          java -version 2>&1 | grep -E "version \"(2[1-9]|[3-9][0-9])\." || (echo "ERROR: Java >=21 required (Capacitor 8)" && exit 1)
 
       - name: Capacitor sync
         run: |
