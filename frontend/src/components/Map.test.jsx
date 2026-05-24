@@ -128,7 +128,8 @@ describe('createMerchantMarkerEl', () => {
   it('contains icon div as first child', () => {
     const el = createMerchantMarkerEl('data:img/svg', 'Shop', null);
     expect(el.children[0]).toBeTruthy();
-    expect(el.children[0].style.backgroundImage).toContain('data:img/svg');
+    // children[0] is iconWrapper; icon is its first child
+    expect(el.children[0].children[0].style.backgroundImage).toContain('data:img/svg');
   });
 
   it('shows name label when name is provided', () => {

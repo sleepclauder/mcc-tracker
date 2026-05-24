@@ -55,12 +55,16 @@ export default function MerchantPage() {
   const [showVote, setShowVote] = useState(false);
   const [toast, setToast] = useState(null);
   const [userCashbacks, setUserCashbacks] = useState([]);
+  const [noTerminalCount, setNoTerminalCount] = useState(0);
+  const [userReportedNoTerminal, setUserReportedNoTerminal] = useState(false);
 
   async function loadStats() {
     setLoading(true);
     try {
       const { data } = await client.get(`/merchants/${yandex_firm_id}/stats`);
       setStats(data);
+      setNoTerminalCount(data.NO_TERMINAL_COUNT ?? 0);
+      setUserReportedNoTerminal(data.USER_NO_TERMINAL ?? false);
     } catch (e) {
       const isNotFound = e.response?.status === 404;
       const fallback = location.state?.merchant;
@@ -83,6 +87,17 @@ export default function MerchantPage() {
       .catch(() => {});
   }, []);
 
+  async function toggleNoTerminal() {
+    try {
+      const { data } = await client.post(`/merchants/${yandex_firm_id}/no-terminal`);
+      setNoTerminalCount(data.count);
+      setUserReportedNoTerminal(data.reported);
+      setToast(data.reported ? 'Жалоба отправлена' : 'Жалоба отозвана');
+    } catch {
+      setToast('Ошибка — попробуйте ещё раз');
+    }
+  }
+
   if (loading) return <div className="page-status">Загрузка...</div>;
   if (error)   return <div className="page-status error">{error}</div>;
   if (!stats)  return null;
@@ -104,6 +119,14 @@ export default function MerchantPage() {
         </p>
       )}
       <p className="merchant-hint">MCC — код категории торговой точки. Чем точнее код, тем выше кэшбэк по вашей карте.</p>
+
+      {noTerminalCount > 0 && (
+        <div className="no-terminal-banner">
+          <span className="no-terminal-icon">💳</span>
+          Пользователи сообщают: терминал не работает
+          <span className="no-terminal-count">({noTerminalCount})</span>
+        </div>
+      )}
 
       <div className="stats-grid">
         <div className="stat">
@@ -158,6 +181,14 @@ export default function MerchantPage() {
           ? <button className="btn-primary vote-btn" onClick={() => setShowVote(true)}>Проголосовать за MCC</button>
           : <Link to="/login" className="btn-primary vote-btn">Войдите чтобы проголосовать</Link>
         }
+        {isAuthenticated() && (
+          <button
+            className={`btn-no-terminal${userReportedNoTerminal ? ' btn-no-terminal--active' : ''}`}
+            onClick={toggleNoTerminal}
+          >
+            {userReportedNoTerminal ? '✓ Вы сообщили: нет терминала' : '💳 Нет терминала'}
+          </button>
+        )}
         <GisReviewsLink gisUrl={stats.GIS_URL} />
       </div>
 

@@ -49,13 +49,25 @@ function createMarkerEl(svgUri, size) {
   return el;
 }
 
-export function createMerchantMarkerEl(svgUri, name, cashback) {
+export function createMerchantMarkerEl(svgUri, name, cashback, noTerminal) {
   const wrapper = document.createElement('div');
   wrapper.style.cssText = 'display:flex;flex-direction:column;align-items:center;cursor:pointer;';
 
+  const iconWrapper = document.createElement('div');
+  iconWrapper.style.cssText = 'position:relative;width:32px;height:32px;flex-shrink:0;';
+
   const icon = document.createElement('div');
   icon.style.cssText = `width:32px;height:32px;background-image:url("${svgUri}");background-size:contain;background-repeat:no-repeat;`;
-  wrapper.appendChild(icon);
+  iconWrapper.appendChild(icon);
+
+  if (noTerminal) {
+    const badge = document.createElement('div');
+    badge.style.cssText = 'position:absolute;top:-3px;right:-5px;width:14px;height:14px;background:#e53935;border-radius:50%;border:1.5px solid #fff;display:flex;align-items:center;justify-content:center;font-size:8px;color:#fff;line-height:1;font-weight:bold;';
+    badge.textContent = '✕';
+    iconWrapper.appendChild(badge);
+  }
+
+  wrapper.appendChild(iconWrapper);
 
   const shortName = name ? (name.length > 14 ? name.slice(0, 13) + '…' : name) : '';
   if (shortName) {
@@ -126,7 +138,8 @@ export default function Map({ onCenterChange, merchants = [], onMerchantHover, f
         } else {
           const merchant = props;
           const cashback = merchantCashbackRef.current[merchant.YANDEX_FIRM_ID] ?? null;
-          const el = createMerchantMarkerEl(markerIcon(merchant.LAST_MCC), merchant.NAME, cashback);
+          const noTerminal = (merchant.NO_TERMINAL_COUNT ?? 0) > 0;
+          const el = createMerchantMarkerEl(markerIcon(merchant.LAST_MCC), merchant.NAME, cashback, noTerminal);
           const marker = new maplibregl.Marker({ element: el, anchor: 'top' }).setLngLat([clon, clat]).addTo(map);
 
           // Desktop: click navigates, hover shows tooltip

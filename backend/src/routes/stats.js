@@ -1,5 +1,6 @@
 'use strict';
 const express = require('express');
+const optionalAuth = require('../middleware/optionalAuth');
 
 const GIS_STALE_DAYS = 30;
 
@@ -36,7 +37,7 @@ async function fetch2GIS(name, lat, lon) {
 module.exports = function makeStatsRouter(db) {
   const router = express.Router();
 
-  router.get('/:yandex_firm_id/stats', async (req, res) => {
+  router.get('/:yandex_firm_id/stats', optionalAuth, async (req, res) => {
     const { yandex_firm_id } = req.params;
     try {
       const result = await db.execute(
@@ -49,6 +50,22 @@ module.exports = function makeStatsRouter(db) {
       );
       if (!result.rows.length) return res.status(404).json({ error: 'merchant not found' });
       let stats = result.rows[0];
+
+      const ntCount = await db.execute(
+        `SELECT COUNT(*) AS cnt FROM no_terminal_reports
+         WHERE merchant_yandex_firm_id = :yandex_firm_id`,
+        { yandex_firm_id }
+      );
+      stats = { ...stats, NO_TERMINAL_COUNT: ntCount.rows[0].CNT };
+
+      if (req.user) {
+        const ntUser = await db.execute(
+          `SELECT COUNT(*) AS cnt FROM no_terminal_reports
+           WHERE merchant_yandex_firm_id = :yandex_firm_id AND user_id = :userId`,
+          { yandex_firm_id, userId: req.user.id }
+        );
+        stats = { ...stats, USER_NO_TERMINAL: ntUser.rows[0].CNT > 0 };
+      }
 
       const staleMs = GIS_STALE_DAYS * 24 * 60 * 60 * 1000;
       const isStale = !stats.GIS_FETCHED_AT ||

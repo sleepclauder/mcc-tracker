@@ -11,6 +11,7 @@ app.use(express.json());
 app.use('/auth',      require('./routes/auth')(db));
 app.use('/merchants', require('./routes/merchants')(db));
 app.use('/merchants', require('./routes/stats')(db));
+app.use('/merchants', require('./routes/no_terminal')(db));
 app.use('/votes',     require('./routes/votes')(db));
 app.use('/cards',     require('./routes/cards')(db));
 app.use('/gis',       require('./routes/gis')());
