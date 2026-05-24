@@ -190,7 +190,7 @@ export default function MapPage() {
             <circle cx="25" cy="23.5" r="3" fill="white"/>
             <line x1="25.5" y1="12.5" x2="14.5" y2="24.5" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
           </svg>
-          Чек<span style={{color:'#e53935'}}>Бэк</span>
+          <span>Чек<span style={{color:'#e53935'}}>Бэк</span></span>
         </span>
         <div className="header-controls">
           <button

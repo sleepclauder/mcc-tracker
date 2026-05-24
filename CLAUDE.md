@@ -4,7 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this project is
 
-Crowdsourced map where users vote on MCC (Merchant Category Code) for retail locations to maximize cashback on bank cards. Users see a 2GIS map with colored markers per category, tap a merchant, and vote on its MCC.
+**ЧекБэк** — crowdsourced map where users vote on MCC (Merchant Category Code) for retail locations to maximize cashback on bank cards. Users see a 2GIS map with colored markers per category, tap a merchant, and vote on its MCC.
+
+**Brand name:** always written as one word — **ЧекБэк** (no space). In the header, "Чек" is black and "Бэк" is red (`#e53935`). Both are wrapped in a single `<span>` so flexbox gap doesn't split them.
+
+Live at: **https://checkback.duckdns.org**
 
 ## Commands
 
@@ -36,6 +40,15 @@ npx vitest src/components/MerchantCard.test.jsx # single test file
 NODE_PATH=backend/node_modules node db/seed_osm_spb.js
 ```
 
+### Android (Capacitor)
+```bash
+cd frontend
+npm run build            # production build with HTTPS API URL
+npx cap sync android     # copy dist/ into android project
+npx cap open android     # open in Android Studio → Build APK
+```
+Full details: `docs/android-plan.md`
+
 ### Deploy (manual, from dev machine)
 ```bash
 ssh -i ssh-key/ssh-key-2026-05-10.key ubuntu@147.5.126.225
@@ -51,12 +64,12 @@ CI/CD (GitHub Actions) triggers automatically on push to `main`: runs both test 
 ## Architecture
 
 ```
-[Browser]
+[Browser / Android WebView (ЧекБэк app)]
   React + Vite SPA
   2GIS MapGL (npm, not script tag)
-       │ VITE_API_URL (env)
+       │ VITE_API_URL (env) → https://checkback.duckdns.org/api
        ▼
-[Nginx on VM 147.5.126.225]
+[Nginx on VM 147.5.126.225 — checkback.duckdns.org]
   /         → frontend/dist/   (static)
   /api/*    → localhost:3000   (proxy strip /api prefix)
        │
@@ -162,7 +175,17 @@ All codes are seeded in `mcc_codes` table. To add a new category: seed the DB, a
 ## Infrastructure
 
 - **VM:** Oracle Cloud, Ubuntu 22.04, 1 GB RAM + 1 GB swap, IP `147.5.126.225`
+- **Domain:** `checkback.duckdns.org` (DuckDNS) — HTTPS via Let's Encrypt (certbot)
 - **Process manager:** PM2, process name `mcc-api`
 - **Oracle wallet:** `/var/www/mcc-tracker/wallet/` on VM — never in git
 - **GitHub Secrets:** `VM_HOST`, `VM_USER`, `VM_SSH_KEY` (ed25519, generated May 2026)
 - **SSH key (admin):** `ssh-key/ssh-key-2026-05-10.key` — local only, in `.gitignore`
+
+## Android app
+
+- **Name:** ЧекБэк, **appId:** `ru.mcctracker.app`
+- **Stack:** Capacitor 7 wrapping the React/Vite SPA
+- **Geolocation:** `@capacitor/geolocation` plugin (native permissions on Android)
+- **API:** `https://checkback.duckdns.org/api` (baked in via `.env.production`)
+- **Build:** Android Studio Panda → Build APK. See `docs/android-plan.md`
+- **Icon/splash:** generated via `@capacitor/assets` from `frontend/assets/icon.svg`
