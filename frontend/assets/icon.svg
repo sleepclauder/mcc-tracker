@@ -1,0 +1,15 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="1024" height="1024" rx="180" fill="#e53935"/>
+
+  <!-- Map pin shape centered, scaled up -->
+  <path d="M512 140C354 140 226 268 226 426C226 584 512 884 512 884C512 884 798 584 798 426C798 268 670 140 512 140Z" fill="white" opacity="0.95"/>
+
+  <!-- Percent sign inside pin -->
+  <!-- Top-left circle -->
+  <circle cx="430" cy="340" r="52" fill="#e53935"/>
+  <!-- Bottom-right circle -->
+  <circle cx="594" cy="504" r="52" fill="#e53935"/>
+  <!-- Diagonal line -->
+  <line x1="610" y1="318" x2="414" y2="526" stroke="#e53935" stroke-width="48" stroke-linecap="round"/>
+</svg>

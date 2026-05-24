@@ -80,6 +80,8 @@
 | VCN | `mcc-tracker-vcn` |
 | Subnet | `mcc-tracker-subnet-public` |
 | Public IPv4 | `147.5.126.225` |
+| Domain | `checkback.duckdns.org` (DuckDNS, бесплатный) |
+| HTTPS | Let's Encrypt (certbot) |
 | SSH key | Скачан при создании (`.pem`) |
 
 ---
