@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import MapPage from './pages/MapPage';
 import MerchantPage from './pages/MerchantPage';
@@ -12,7 +12,8 @@ import { useAndroidBack } from './hooks/useAndroidBack';
 
 function AndroidBackHandler() {
   const [exitToast, setExitToast] = useState(null);
-  useAndroidBack(() => setExitToast({ message: 'Нажмите ещё раз для выхода', type: 'success' }));
+  const showHint = useCallback(() => setExitToast({ message: 'Нажмите ещё раз для выхода', type: 'success' }), []);
+  useAndroidBack(showHint);
   return exitToast
     ? <Toast message={exitToast.message} type={exitToast.type} onDone={() => setExitToast(null)} />
     : null;
