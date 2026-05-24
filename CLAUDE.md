@@ -37,7 +37,10 @@ npx vitest src/components/MerchantCard.test.jsx # single test file
 ### DB seed (run on VM only — needs Oracle wallet)
 ```bash
 # From repo root on the VM:
-NODE_PATH=backend/node_modules node db/seed_osm_spb.js
+NODE_PATH=backend/node_modules node db/seed_osm_spb.js               # Saint Petersburg
+NODE_PATH=backend/node_modules node db/seed_osm_cities.js             # Moscow + Podolsk (all)
+NODE_PATH=backend/node_modules node db/seed_osm_cities.js moscow       # Moscow only
+NODE_PATH=backend/node_modules node db/seed_osm_cities.js podolsk      # Podolsk only
 ```
 
 ### Android (Capacitor)
@@ -154,7 +157,11 @@ The `rubric_id` filter also prevents non-commercial POI (waste sites, infrastruc
 
 **node_modules must not be committed.** `.gitignore` covers both `node_modules/` and `frontend/node_modules/`. If they appear tracked, run `git rm -r --cached frontend/node_modules/`.
 
-**OSM seed data:** `db/seed_osm_spb.js` fetches up to 10000 elements (`node` + `way`) from Overpass API for SPb bounding box (59.75–60.15 lat, 29.50–30.75 lon). `way` elements use `out body center` to get centroid coordinates; stored with ID prefix `osm_w_<id>` (nodes use `osm_<id>`). Run on VM — needs Oracle wallet. Inserts a seed vote per merchant so MCC shows on map immediately. Timeout raised to 180 s for larger queries.
+**OSM seed data:** Two seed scripts fetch from Overpass API, both run on VM only (need Oracle wallet):
+- `db/seed_osm_spb.js` — Saint Petersburg (bbox 59.75–60.15 N, 29.50–30.75 E), up to 10 000 elements, ID prefix `osm_` / `osm_w_`
+- `db/seed_osm_cities.js` — Moscow (bbox 55.49–55.92 N, 37.32–37.97 E, prefix `osm_msk_` / `osm_msk_w_`) and Podolsk (bbox 55.38–55.51 N, 37.47–37.62 E, prefix `osm_podolsk_`), up to 50 000 elements each. Accepts city names as CLI args (`moscow`, `podolsk`); defaults to all.
+
+`way` elements use `out body center` to get centroid coordinates. Both scripts insert a seed vote per merchant so MCC shows on map immediately. Includes all 8 MCC categories (including auto service 7538, tire service 7534, insurance 6411). Timeout 180 s.
 
 ## MCC codes in use
 
