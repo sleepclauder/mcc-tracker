@@ -13,7 +13,7 @@ const OVERPASS_QUERY = `
   way["amenity"~"^(pharmacy|restaurant|cafe|fast_food|fuel)$"](59.75,29.50,60.15,30.75);
   way["shop"~"^(department_store|mall)$"](59.75,29.50,60.15,30.75);
 );
-out body center 10000;
+out body center 50000;
 `.trim();
 
 function osmTagToMcc(tags) {
