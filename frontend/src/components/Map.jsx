@@ -7,7 +7,7 @@ import { markerIcon, userLocationIcon } from '../utils/mcc';
 
 const LAT_PER_METER = 1 / 111000;
 const CLUSTER_MAX_ZOOM = 14;
-const MAP_STYLE = 'https://tiles.openfreemap.org/styles/liberty';
+const MAP_STYLE = 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json';
 
 function toFeatures(merchants) {
   return merchants
@@ -207,9 +207,6 @@ export default function Map({ onCenterChange, merchants = [], onMerchantHover, f
           map.setLayoutProperty(layer.id, 'visibility', 'none');
         }
       });
-      // Show house numbers from zoom 14 (liberty style default is 17+)
-      try { map.setLayerZoomRange('housenumber', 14, 24); } catch {}
-
       const { lng, lat } = map.getCenter();
       onCenterChange?.(lat, lng);
       // Apply flyTo if geolocation resolved before map finished loading
