@@ -120,6 +120,10 @@ CI/CD (GitHub Actions) triggers automatically on push to `main`: runs both test 
 
 **Oracle bind variables:** never use `:uid`, `:mid`, `:mcc` — `UID` is an Oracle reserved pseudo-column. Use full names like `:userId`, `:merchantId`, `:mccCode`.
 
+**Oracle wallet password ≠ DB user password.** `db.js`'s `walletPassword` option decrypts the wallet files (`ewallet.p12`) and must match the password chosen in the OCI "Download Wallet" dialog — it is unrelated to `DB_USER`/`DB_PASSWORD`. A mismatch doesn't fail fast: `oracledb` retries the TLS handshake per `tnsnames.ora`'s `retry_count=20`/`retry_delay=3` before surfacing `NJS-505: unable to initiate TLS connection ... bad decrypt`, which looks identical to a hung/unreachable DB for ~60s. Set it via its own `ORACLE_WALLET_PASSWORD` env var, never reuse `DB_PASSWORD`. (Root cause of the 2026-10-20 login outage.)
+
+**`oracledb` connection pool (`createPool`) hangs against this wallet** — `pool.getConnection()` never resolves and eventually throws `NJS-040: connection request timeout`, even though a direct `oracledb.getConnection()` with the same credentials works instantly. `db.js` therefore opens a fresh connection per call instead of pooling. Don't reintroduce `createPool()` without first confirming this is fixed upstream.
+
 **Merchant geo-search:** uses a bounding box approximation (`LAT_PER_METER = 1/111000`), not Haversine. Accurate enough for 1–5 km radius.
 
 **Map centering:** last position is persisted in `localStorage` key `mcc_last_center`. On mount, geolocation is only requested if no saved position exists.
